@@ -185,9 +185,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.59"
+version = "1.0.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c91f1f46651137be86f3a2b9a8359f9ab421d04d941c62b5982e1ca21113adf9"
+checksum = "c794e162a5eff65c72ef524dfe393eb923c354e350bb78b9c7383df13f3bc142"
 
 [[package]]
 name = "arrayref"
@@ -816,6 +816,8 @@ name = "orbit-physical-market"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "product",
+ "transaction",
 ]
 
 [[package]]
@@ -876,6 +878,14 @@ dependencies = [
  "syn",
  "version_check",
  "yansi",
+]
+
+[[package]]
+name = "product"
+version = "0.1.0"
+source = "git+https://github.com/bruh-capital/product#110e1299f9615b4f5659c9858659ea33dd0191b5"
+dependencies = [
+ "anchor-lang",
 ]
 
 [[package]]
@@ -1249,6 +1259,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d82e1a7758622a465f8cee077614c73484dac5b836c02ff6a40d5d1010324d7"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "transaction"
+version = "0.1.0"
+source = "git+https://github.com/bruh-capital/transaction#292c11b0116237aaa5af6f653c1e0365dfc3d6d6"
+dependencies = [
+ "anchor-lang",
+ "product",
 ]
 
 [[package]]

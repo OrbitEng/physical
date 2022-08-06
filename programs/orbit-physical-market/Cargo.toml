@@ -17,3 +17,5 @@ default = []
 
 [dependencies]
 anchor-lang = "0.25.0"
+product = {git = "https://github.com/bruh-capital/product"}
+transaction = {git = "https://github.com/bruh-capital/transaction"}
