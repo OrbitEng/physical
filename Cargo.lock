@@ -883,7 +883,7 @@ dependencies = [
 [[package]]
 name = "product"
 version = "0.1.0"
-source = "git+https://github.com/bruh-capital/product#110e1299f9615b4f5659c9858659ea33dd0191b5"
+source = "git+https://github.com/bruh-capital/product#f50c5f48bd455e241be16842a99aecd393200dea"
 dependencies = [
  "anchor-lang",
 ]
@@ -1264,7 +1264,7 @@ dependencies = [
 [[package]]
 name = "transaction"
 version = "0.1.0"
-source = "git+https://github.com/bruh-capital/transaction#292c11b0116237aaa5af6f653c1e0365dfc3d6d6"
+source = "git+https://github.com/bruh-capital/transaction#be3278132107d3ae69f9a30c379d8913636ed1fe"
 dependencies = [
  "anchor-lang",
  "product",
