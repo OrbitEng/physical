@@ -9,12 +9,13 @@ use product::{
 #[derive(Accounts)]
 pub struct ListPhysicalProduct<'info>{
 
-    // #[account(
-    //     init, 
-    // )]
+    #[account(
+        init,
+        space = 47, // base is 47 rn (39 + 8). increase this to a proper amount for wiggle room for additions
+    )]
+    pub new_product: Account<'info, PhysicalProduct>,
 
-
-    
+    pub seller: Account<'info, MarketAccount>,
     
     pub system_program: Program<'info, System>
 }
