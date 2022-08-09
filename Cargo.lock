@@ -1273,7 +1273,7 @@ dependencies = [
 [[package]]
 name = "transaction"
 version = "0.1.0"
-source = "git+https://github.com/bruh-capital/transaction#be3278132107d3ae69f9a30c379d8913636ed1fe"
+source = "git+https://github.com/bruh-capital/transaction#4589407b10f2dafb8ce7af21ba2326184c8acabf"
 dependencies = [
  "anchor-lang",
  "product",

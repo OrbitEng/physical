@@ -5,6 +5,6 @@ use transaction::transaction_struct::OrbitTransaction;
 // impls AnchorSerialize, AnchorDeserialize, mem::LEN, Clone, and Deref I believe
 #[account]
 pub struct PhysicalTransaction{
-    pub metadata: OrbitTransaction,
-    pub product: Pubkey
+    pub metadata: OrbitTransaction, // 32 * 3 + 5?
+    pub product: Pubkey // 32
 }

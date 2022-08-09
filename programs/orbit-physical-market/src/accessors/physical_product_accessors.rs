@@ -10,28 +10,31 @@ use product::{
 use market_accounts::structs::market_account::OrbitMarketAccount;
 
 
+//////////////////////////////////////////////////////////////////////////////
+/// DEFAULT PRODUCT TRAIT
+
+
+// todo:
+//      add to catalog
 #[derive(Accounts)]
 pub struct ListPhysicalProduct<'info>{
 
     #[account(
         init,
-        space = 47, // base is 47 rn (39 + 8). increase this to a proper amount for wiggle room for additions
+        space = 1000, // 106 + 8. leave room for adjustment during launch
         payer = payer
     )]
     pub new_product: Account<'info, PhysicalProduct>,
 
-    // todo: link seller with payer somehow? maybe do a check eg: only the seller can fund their own products
+    #[account(
+        has_one = master_pubkey
+    )]
     pub seller: Account<'info, OrbitMarketAccount>,
 
-    #[account(
-        mut,
-    )]
+    #[account(mut)]
     pub payer: Signer<'info>,
 
-    #[account(
-        address = seller.master_pubkey
-    )]
-    pub authority: Signer<'info>,
+    pub master_pubkey: Signer<'info>,
     
     pub system_program: Program<'info, System>
 }
@@ -53,12 +56,12 @@ pub struct UnlistPhysicalProduct<'info>{
     )]
     pub destination_wallet: AccountInfo<'info>,
 
+    #[account(
+        has_one = master_pubkey
+    )]
     pub market_account: Account<'info, OrbitMarketAccount>,
 
-    #[account(
-        address = market_account.master_pubkey
-    )]
-    pub authority: Signer<'info>,
+    pub master_pubkey: Signer<'info>,
 
     pub system_program: Program<'info, System>
 }
@@ -74,4 +77,31 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
         // returns error if errors
         ctx.accounts.phys_product.close(ctx.accounts.destination_wallet.clone()).map_err(|e| e)
     }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+/// PHYSICAL PRODUCT SPECIFIC FUNCTIONALITIES
+
+#[derive(Accounts)]
+pub struct UpdateQuantity<'info>{
+    #[account(
+        mut,
+        constraint = phys_product.metadata.seller == market_account.key()
+    )]
+    pub phys_product: Account<'info, PhysicalProduct>,
+
+    #[account(
+        has_one = master_pubkey
+    )]
+    pub market_account: Account<'info, OrbitMarketAccount>,
+
+    pub master_pubkey: Signer<'info>,
+}
+
+pub fn update_quantity_handler(ctx: Context<UpdateQuantity>, qnt: u32) -> Result<()>{
+    ctx.accounts.phys_product.quantity = qnt;
+    if qnt == 0{
+        ctx.accounts.phys_product.metadata.available = false;
+    }
+    Ok(())
 }
