@@ -1,7 +1,12 @@
 use anchor_lang::{
     prelude::*,
-    AccountsClose
+    AccountsClose,
+    solana_program::{
+        system_instruction::transfer,
+        program::invoke_signed
+    }
 };
+
 use market_accounts::structs::market_account::OrbitMarketAccount;
 use crate::structs::physical_transaction::PhysicalTransaction;
 use transaction::transaction_struct::TransactionState;
@@ -87,6 +92,27 @@ pub struct ClosePhysicalTransaction<'info>{
 }
 
 pub fn close_physical_transaction_handler(ctx: Context<ClosePhysicalTransaction>) -> Result<()>{
-    ctx.accounts.escrow_account.close(ctx.accounts.destination.clone()).map_err(|e| e);
+    // fix
+    // let close_escrow = invoke_signed(
+    //     &transfer(
+    //         ctx.accounts.escrow_account.key,
+    //         ctx.accounts.destination.key,
+    //         ctx.accounts.escrow_account.lamports()
+    //     ), &[
+    //         ctx.accounts.escrow_account.clone(),
+    //         ctx.accounts.destination.clone()
+    //     ], 
+    //     &[
+    //         &[b"orbit_escrow_account",
+    //         ctx.accounts.phys_transaction.key().as_ref(),
+    //         &[
+    //             *ctx.bumps.get("jerone").unwrap()
+    //         ]]
+    //     ]
+    // );
+    // match close_escrow{
+    //     Ok(_) => {},
+    //     Err(e) => return Err(e)
+    // };
     ctx.accounts.phys_transaction.close(ctx.accounts.destination.clone()).map_err(|e| e)
 }
