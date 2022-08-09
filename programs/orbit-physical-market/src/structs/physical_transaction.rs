@@ -6,5 +6,5 @@ use transaction::transaction_struct::OrbitTransaction;
 #[account]
 pub struct PhysicalTransaction{
     pub metadata: OrbitTransaction, // 32 * 3 + 5?
-    pub product: Pubkey // 32
+    pub escrow_account: Pubkey,
 }

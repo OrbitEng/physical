@@ -674,9 +674,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.127"
+version = "0.2.128"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "505e71a4706fa491e9b1b55f51b95d4037d0821ee40131190475f692b35b009b"
+checksum = "95f2a930906a03d4ee59113b31586c057c94f4d40c9fe90f21597a8b6822bfd8"
 
 [[package]]
 name = "libsecp256k1"
@@ -748,7 +748,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/bruh-capital/accounts#83b765e6d7a85111436369277dc28593b4908556"
+source = "git+https://github.com/bruh-capital/accounts#62b93552cc756b12928b3cc64d2aacb6846edea2"
 dependencies = [
  "anchor-lang",
 ]
@@ -1273,7 +1273,7 @@ dependencies = [
 [[package]]
 name = "transaction"
 version = "0.1.0"
-source = "git+https://github.com/bruh-capital/transaction#4589407b10f2dafb8ce7af21ba2326184c8acabf"
+source = "git+https://github.com/bruh-capital/transaction#f43e30de32f5370a0d9e9680c2e2bd3d3c417d6f"
 dependencies = [
  "anchor-lang",
  "product",
