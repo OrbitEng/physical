@@ -66,7 +66,7 @@ pub struct UnlistPhysicalProduct<'info>{
     pub system_program: Program<'info, System>
 }
 
-impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalProduct<'b>> for PhysicalProduct{
+pub impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalProduct<'b>> for PhysicalProduct{
     fn list(ctx: Context<ListPhysicalProduct>, prod: OrbitProduct) -> Result<()>{
         ctx.accounts.new_product.metadata = prod;
         Ok(())
