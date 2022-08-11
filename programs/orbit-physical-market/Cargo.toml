@@ -19,4 +19,5 @@ default = []
 anchor-lang = "0.25.0"
 product = {git = "https://github.com/bruh-capital/product"}
 transaction = {git = "https://github.com/bruh-capital/transaction"}
-market-accounts = {git = "https://github.com/bruh-capital/accounts"}
+market-accounts = {git = "https://github.com/bruh-capital/accounts", features = ["no-entrypoint"]}
+dispute = {git = "https://github.com/bruh-capital/dispute", features = ["no-entrypoint"]}

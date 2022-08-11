@@ -3,37 +3,12 @@ use anchor_lang::{
     AccountsClose
 };
 use market_accounts::structs::market_account::OrbitMarketAccount;
-use crate::structs::{physical_transaction::PhysicalTransaction, physical_product::PhysicalProduct};
 use transaction::{transaction_struct::TransactionState, transaction_trait::OrbitTransactionTrait};
-
-// todo:
-//      add default escrow
-
+use crate::structs::{physical_transaction::PhysicalTransaction, physical_product::PhysicalProduct};
+use dispute::structs::dispute_trait::OrbitDisputableTrait;
 
 ////////////////////////////////////////////////////////////////////
 /// ORBIT BASE TRANSACTION FUNCTIONALITIES
-#[derive(Accounts)]
-pub struct FreezePhysicalTransaction<'info>{
-    #[account(mut)]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
-
-    // todo:
-    //      use dispute crate. enforce that this
-    //      authority.key() == seeds["some_seed_string", dispute::ID(), &[bumps]]
-    pub authority: Signer<'info>,
-}
-
-#[derive(Accounts)]
-pub struct UnfreezePhysicalTransaction<'info>{
-    #[account(mut)]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
-
-    // todo:
-    //      use dispute crate. enforce that this
-    //      authority.key() == seeds["some_seed_string", dispute::ID(), &[bumps]]
-    pub authority: Signer<'info>,   
-}
-
 #[derive(Accounts)]
 pub struct OpenPhysicalTransaction<'info>{
     #[account(
@@ -95,15 +70,7 @@ pub struct ClosePhysicalTransaction<'info>{
     pub authority: Signer<'info>,
 }
 
-impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, FreezePhysicalTransaction<'a>, UnfreezePhysicalTransaction<'b>, OpenPhysicalTransaction<'c>, ClosePhysicalTransaction<'d>> for PhysicalTransaction{
-    fn freeze(ctx: Context<FreezePhysicalTransaction>) -> Result<()> {
-        Ok(())
-    }
-
-    fn unfreeze(ctx: Context<UnfreezePhysicalTransaction>) -> Result<()> {
-        Ok(())
-    }
-
+impl<'a, 'b> OrbitTransactionTrait<'a, 'b, OpenPhysicalTransaction<'a>, ClosePhysicalTransaction<'b>> for PhysicalTransaction{
     fn open(ctx: Context<OpenPhysicalTransaction>, price: u64) -> Result<()>{
         ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer.key();
         ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.phys_product.metadata.seller.key();
@@ -123,5 +90,55 @@ impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, FreezePhysicalTransac
         **ctx.accounts.escrow_account.try_borrow_mut_lamports()? -= xfer_amt;
         **ctx.accounts.destination.try_borrow_mut_lamports()? += xfer_amt;
         ctx.accounts.phys_transaction.close(ctx.accounts.destination.clone()).map_err(|e| e)
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////
+/// ORBIT DISPUTE FUNCTIONALITIES
+#[derive(Accounts)]
+pub struct OpenDispute<'info>{
+    #[account(mut)]
+    pub phys_transaction: Account<'info, PhysicalTransaction>,
+
+    #[account(
+        seeds = [
+            b"dispute_auth"
+        ],
+        bump,
+        seeds::program = dispute::ID,
+    )]
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct CloseDispute<'info>{
+    #[account(mut)]
+    pub phys_transaction: Account<'info, PhysicalTransaction>,
+
+    #[account(mut)]
+    pub favor: AccountInfo<'info>,
+
+    #[account(
+        seeds = [
+            b"dispute_auth"
+        ],
+        bump,
+        seeds::program = dispute::ID,
+    )]
+    pub authority: Signer<'info>,   
+}
+// do checks
+impl<'a, 'b> OrbitDisputableTrait<'a, 'b, OpenDispute<'a>, CloseDispute<'b>>{
+    fn open_dispute(ctx: Context<OpenDispute>) -> Result<()>{
+        ctx.accounts.phys_transaction.metadata.transaction_state == TransactionState::Frozen;
+        Ok(())
+    }
+
+    
+    fn close_dispute(ctx: Context<CloseDispute>) -> Result<()>{
+        ctx.accounts.phys_transaction.metadata.transaction_state == TransactionState::Closed;
+        ctx.accounts.phys_transaction.close(ctx.accounts.favor);
+        Ok(())
     }
 }
