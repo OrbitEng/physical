@@ -1,8 +1,5 @@
 use anchor_lang::prelude::*;
 use product::product_struct::OrbitProduct;
-use product::product_trait::OrbitProductTrait;
-use transaction::transaction_trait::OrbitTransactionTrait;
-use dispute::OrbitDisputableTrait;
 
 pub mod structs;
 pub mod accessors;
@@ -15,13 +12,16 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod orbit_physical_market {
-
     use super::*;
 
-    // pub fn initialize_phys_market(_ctx: Context<Initialize>) -> Result<()>{
-    //     Ok(())
-    // }
+    use product::product_trait::OrbitProductTrait;
+    use transaction::transaction_trait::OrbitTransactionTrait;
+    use dispute::OrbitDisputableTrait;
+    use market_accounts::structs::OrbitMarketAccountTrait;
     
+    ///////////////////////////////////////////////////
+    /// PRODUCT HANDLERS
+
     pub fn list_product(ctx: Context<ListPhysicalProduct>, prod: OrbitProduct) -> Result<()> {
         PhysicalProduct::list(ctx, prod)
     }
@@ -38,12 +38,22 @@ pub mod orbit_physical_market {
         update_quantity_handler(ctx, qnt)
     }
 
+    //////////////////////////////////////////////
+    /// TRANSACTION HANDLERS
+
     pub fn open_transaction(ctx: Context<OpenPhysicalTransaction>, price: u64) -> Result<()>{
         PhysicalTransaction::open(ctx, price)
     }
 
     pub fn close_transaction(ctx: Context<ClosePhysicalTransaction>) -> Result<()>{
         PhysicalTransaction::close(ctx)
+    }
+
+    pub fn fund_escrow(ctx: Context<FundEscrow>) -> Result<()>{
+        PhysicalTransaction::fund_escrow(ctx)
+    }
+    pub fn close_transaction_account(ctx: Context<CloseTransactionAccount>) -> Result<()>{
+        PhysicalTransaction::close_transaction_account(ctx)
     }
 
     pub fn open_dispute(ctx: Context<OpenPhysicalDispute>, threshold: u8) -> Result<()>{
@@ -54,18 +64,11 @@ pub mod orbit_physical_market {
         PhysicalTransaction::close_dispute(ctx)
     }
 
+    /////////////////////////////////////////////////
+    /// REVIEW RELATED
+    
+    pub fn leave_review(ctx: Context<LeaveReview>, rating: u8) -> Result<()>{
+        PhysicalTransaction::leave_review(ctx, rating)
+    }
+
 }
-
-// #[derive(Accounts)]
-// pub struct Initialize<'info>{
-//     #[account(
-//         seeds = [b"physical_auth"],
-//         bump
-//     )]
-//     pub phys_auth: SystemAccount<'info>,
-
-//     #[account(mut)]
-//     pub payer: Signer<'info>,
-
-//     pub system_program: Program<'info, System>
-// }

@@ -6,7 +6,19 @@ use anchor_lang::{
     prelude::*,
     AccountsClose
 };
-use market_accounts::structs::market_account::OrbitMarketAccount;
+use market_accounts::{
+    structs::{
+        market_account::OrbitMarketAccount,
+        OrbitMarketAccountTrait,
+        ReviewErrors
+    },
+    program::OrbitMarketAccounts,
+    cpi::accounts::{
+        IncrementTransactions,
+        SubmitRating
+    },
+    MarketAccountErrors
+};
 use transaction::{
     transaction_struct::TransactionState,
     transaction_trait::OrbitTransactionTrait
@@ -108,6 +120,17 @@ pub struct ClosePhysicalTransaction<'info>{
         constraint = (authority.key() == seller_account.master_pubkey) || (authority.key() == buyer_account.master_pubkey)
     )] // enforce constraints. only certain people should be able to close
     pub authority: Signer<'info>,
+
+    #[account(
+        seeds = [b"phys_auth"],
+        bump
+    )]
+    pub physical_auth: SystemAccount<'info>,
+
+    #[account(
+        address = market_accounts::ID
+    )]
+    pub market_account_program: Program<'info, OrbitMarketAccounts>
 }
 
 #[derive(Accounts)]
@@ -141,7 +164,29 @@ pub struct FundEscrow<'info>{
     pub buyer_wallet: Signer<'info>
 }
 
-impl<'a, 'b, 'c> OrbitTransactionTrait<'a, 'b, 'c, OpenPhysicalTransaction<'a>, ClosePhysicalTransaction<'b>, FundEscrow<'c>> for PhysicalTransaction{
+#[derive(Accounts)]
+pub struct CloseTransactionAccount<'info>{
+    #[account(
+        mut,
+        constraint = phys_transaction.metadata.transaction_state == TransactionState::Closed,
+    )]
+    pub phys_transaction: Account<'info, PhysicalTransaction>,
+
+    #[account(
+        constraint = 
+            (market_account.key() == phys_transaction.metadata.buyer) ||
+            (market_account.key() == phys_transaction.metadata.seller)
+    )]
+    pub market_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        mut,
+        address = market_account.wallet
+    )]
+    pub buyer_wallet: SystemAccount<'info>
+}
+
+impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, OpenPhysicalTransaction<'a>, ClosePhysicalTransaction<'b>, FundEscrow<'c>, CloseTransactionAccount<'d>> for PhysicalTransaction{
     fn open(ctx: Context<OpenPhysicalTransaction>, price: u64) -> Result<()>{
         ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
         ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.phys_product.metadata.seller.key();
@@ -156,18 +201,41 @@ impl<'a, 'b, 'c> OrbitTransactionTrait<'a, 'b, 'c, OpenPhysicalTransaction<'a>, 
     }
 
     fn close(ctx: Context<ClosePhysicalTransaction>) -> Result<()>{
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
-        
-        let res = match ctx.bumps.get("escrow_account"){
+        match ctx.bumps.get("escrow_account"){
             Some(escrow_seeds) => close_escrow(
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.seller_wallet.to_account_info(),
                 &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                100 // to change to 95%. 5% to orbit :D
+                100 // todo: 5% to some address
             ),
             None => return err!(PhysicalMarketErrors::InvalidEscrowBump)
-        };
-        if res.is_err(){return res};
+        }.expect("couldnt close escrow properly");
+
+        match ctx.bumps.get("phys_auth"){
+            Some(auth_bump) => {
+                market_accounts::cpi::post_tx(
+                    CpiContext::new_with_signer(
+                        ctx.accounts.market_account_program.to_account_info(),
+                        IncrementTransactions{
+                            market_account: ctx.accounts.buyer_account.to_account_info(),
+                            invoker: ctx.accounts.physical_auth.to_account_info()
+                        },
+                        &[&[b"phys_auth", &[*auth_bump]]])
+                ).expect("could not properly invoke market-accounts program");
+                market_accounts::cpi::post_tx(
+                    CpiContext::new_with_signer(
+                        ctx.accounts.market_account_program.to_account_info(),
+                        IncrementTransactions{
+                            market_account: ctx.accounts.seller_account.to_account_info(),
+                            invoker: ctx.accounts.physical_auth.to_account_info()
+                        },
+                        &[&[b"phys_auth", &[*auth_bump]]])
+                )
+            },
+            None => return err!(PhysicalMarketErrors::InvalidAuthBump)
+        }.expect("could not properly invoke market-accounts program");
+        
+        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
         ctx.accounts.phys_transaction.close(ctx.accounts.buyer_wallet.to_account_info()).map_err(|e| e)
     }
 
@@ -187,8 +255,11 @@ impl<'a, 'b, 'c> OrbitTransactionTrait<'a, 'b, 'c, OpenPhysicalTransaction<'a>, 
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
         Ok(())
     }
-}
 
+    fn close_transaction_account(ctx: Context<CloseTransactionAccount>) -> Result<()>{
+        ctx.accounts.phys_transaction.close(ctx.accounts.market_account.to_account_info())
+    }
+}
 
 ////////////////////////////////////////////////////////////////////
 /// ORBIT DISPUTE FUNCTIONALITIES
@@ -225,6 +296,10 @@ pub struct OpenPhysicalDispute<'info>{
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    #[account(
+        seeds = [b"phys_auth"],
+        bump
+    )]
     pub physical_auth: SystemAccount<'info>,
 
     pub dispute_program: Program<'info, Dispute>,
@@ -276,6 +351,10 @@ pub struct ClosePhysicalDispute<'info>{
     )]
     pub escrow_account: SystemAccount<'info>,
 
+    #[account(
+        seeds = [b"phys_auth"],
+        bump
+    )]
     pub physical_auth: SystemAccount<'info>,
 
     pub dispute_program: Program<'info, Dispute>,
@@ -407,4 +486,107 @@ pub fn confirm_delivery(ctx: Context<BuyerConfirm>) -> Result<()>{
 pub fn confirm_product(ctx: Context<BuyerConfirm>) -> Result<()>{
     ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerConfirmedProduct;
     Ok(())
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+/// ACCOUNT HELPERS (leave a review)
+
+/// CHECK: the transaction cant be closed as it holds important metadata
+
+#[derive(Accounts)]
+pub struct LeaveReview<'info>{
+    #[account(mut)]
+    pub phys_transaction: Account<'info, PhysicalTransaction>,
+
+    #[account(
+        mut,
+        constraint = 
+        (reviewer.key() == phys_transaction.metadata.seller) ||
+        (reviewer.key() == phys_transaction.metadata.buyer)
+    )]
+    pub reviewed_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        constraint = 
+        (reviewer.key() == phys_transaction.metadata.seller) ||
+        (reviewer.key() == phys_transaction.metadata.buyer),
+        has_one = master_pubkey
+    )]
+    pub reviewer: Account<'info, OrbitMarketAccount>,
+
+    pub master_pubkey: Signer<'info>,
+
+    pub accounts_program: Program<'info, OrbitMarketAccounts>,
+
+    #[account(
+        seeds = [b"phys_auth"],
+        bump
+    )]
+    pub phys_auth: SystemAccount<'info>,
+}
+
+impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
+ 
+    fn leave_review(ctx: Context<LeaveReview>, rating: u8) -> Result<()>{
+        if ctx.accounts.reviewer.key() == ctx.accounts.reviewed_account.key(){
+            return err!(ReviewErrors::InvalidReviewAuthority)
+        };
+        if rating == 0 || rating > 5{
+            return err!(ReviewErrors::InvalidReviewAuthority)
+        };
+
+        if ctx.accounts.phys_transaction.metadata.seller == ctx.accounts.reviewer.key() && !ctx.accounts.phys_transaction.reviews.seller{
+            match ctx.bumps.get("phys_auth"){
+                Some(auth_bump) => {
+                    submit_rating_with_signer(
+                        ctx.accounts.accounts_program.to_account_info(),
+                        ctx.accounts.reviewed_account.to_account_info(),
+                        ctx.accounts.phys_auth.to_account_info(),
+                        &[&[b"phys_auth", &[*auth_bump]]],
+                        rating
+                    );
+                    ctx.accounts.phys_transaction.reviews.buyer = true;
+                },
+                None => return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
+            }
+            ctx.accounts.phys_transaction.reviews.seller = true;
+        }else
+        if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.key()  && !ctx.accounts.phys_transaction.reviews.buyer{
+            match ctx.bumps.get("phys_auth"){
+                Some(auth_bump) => {
+                    submit_rating_with_signer(
+                        ctx.accounts.accounts_program.to_account_info(),
+                        ctx.accounts.reviewed_account.to_account_info(),
+                        ctx.accounts.phys_auth.to_account_info(),
+                        &[&[b"phys_auth", &[*auth_bump]]],
+                        rating
+                    );
+                    ctx.accounts.phys_transaction.reviews.buyer = true;
+                },
+                None => return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
+            }
+            ctx.accounts.phys_transaction.reviews.buyer = true;
+        }else
+        {
+            return err!(ReviewErrors::InvalidReviewAuthority)
+        };
+
+        Ok(())
+    }
+
+}
+
+/// CHECK: has to be cpi because we can't write to a program we dont own (physical writing to market account directly)
+fn submit_rating_with_signer<'a>(market_program: AccountInfo<'a>, reviewed_account: AccountInfo<'a>, auth: AccountInfo<'a>, seeds: &[&[&[u8]]], rating: u8){
+    market_accounts::cpi::submit_rating(
+        CpiContext::new_with_signer(
+            market_program,
+            SubmitRating{
+                market_account: reviewed_account,
+                invoker: auth
+            },
+            seeds
+        ),
+        (rating-1) as usize
+    ).expect("could not call orbit accounts program");
 }
