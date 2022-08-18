@@ -1,10 +1,10 @@
-use anchor_lang::solana_program::{
-    system_instruction::transfer,
-    program::invoke
-};
 use anchor_lang::{
     prelude::*,
-    AccountsClose
+    AccountsClose,
+    solana_program::{
+        system_instruction::transfer,
+        program::invoke
+    },
 };
 use market_accounts::{
     structs::{
@@ -13,156 +13,42 @@ use market_accounts::{
         ReviewErrors
     },
     program::OrbitMarketAccounts,
-    cpi::accounts::{
-        IncrementTransactions,
-        SubmitRating
-    },
+    cpi::accounts::SubmitRating,
     MarketAccountErrors
 };
 use transaction::{
     transaction_struct::TransactionState,
     transaction_trait::OrbitTransactionTrait
 };
-use crate::structs::{
-    physical_transaction::PhysicalTransaction,
-    physical_product::PhysicalProduct
+use crate::{
+    PhysicalTransaction,
+    errors::PhysicalMarketErrors,
+    close_escrow_sol,
+    close_escrow_spl,
+    
+    OpenPhysicalTransactionSol,
+    ClosePhysicalTransactionSol,
+    FundEscrowSol,
+    ClosePhysicalDisputeSol,
+
+    OpenPhysicalTransactionSpl,
+    ClosePhysicalTransactionSpl,
+    FundEscrowSpl,
+    ClosePhysicalDisputeSpl,
+
+    post_tx_incrementing,
+    close_dispute_helper
 };
-use crate::errors::PhysicalMarketErrors;
-use crate::accessors::common::close_escrow;
 use dispute::{
     structs::{
-        dispute_trait::OrbitDisputableTrait,
-        dispute_struct::{
-            OrbitDispute,
-            DisputeState
-        }
+        dispute_trait::OrbitDisputableTrait
     },
     program::Dispute,
-    cpi::accounts::{
-        OpenDispute,
-        CloseDispute
-    }
+    cpi::accounts::OpenDispute
 };
 
 ////////////////////////////////////////////////////////////////////
 /// ORBIT BASE TRANSACTION FUNCTIONALITIES
-#[derive(Accounts)]
-pub struct OpenPhysicalTransaction<'info>{
-    #[account(
-        init,
-        payer = buyer_wallet,
-        space = 1000
-    )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
-
-    pub phys_product: Account<'info, PhysicalProduct>,
-
-    #[account(
-        seeds = [
-            b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
-        ],
-        bump
-    )]
-    pub escrow_account: SystemAccount<'info>,
-
-    #[account(
-        constraint = buyer_account.wallet == buyer_wallet.key()
-    )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
-
-    #[account(mut)]
-    pub buyer_wallet: Signer<'info>,
-
-    pub master_pubkey: Signer<'info>,
-
-    pub system_program: Program<'info, System>
-}
-
-#[derive(Accounts)]
-pub struct ClosePhysicalTransaction<'info>{
-    #[account(
-        mut,
-        constraint = phys_transaction.metadata.escrow_account == escrow_account.key(),
-        constraint = phys_transaction.metadata.seller == seller_account.key(),
-        constraint = phys_transaction.metadata.buyer == buyer_account.key(),
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
-    )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
-
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
-
-    #[account(
-        mut,
-        address = buyer_account.wallet
-    )]
-    pub buyer_wallet: SystemAccount<'info>,
-
-    pub seller_account: Account<'info, OrbitMarketAccount>,
-
-    #[account(
-        mut,
-        address = seller_account.wallet
-    )]
-    pub seller_wallet: SystemAccount<'info>,
-
-    #[account(
-        mut,
-        seeds = [
-            b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
-        ],
-        bump
-    )]
-    pub escrow_account: SystemAccount<'info>,
-
-    #[account(
-        constraint = (authority.key() == seller_account.master_pubkey) || (authority.key() == buyer_account.master_pubkey)
-    )] // enforce constraints. only certain people should be able to close
-    pub authority: Signer<'info>,
-
-    #[account(
-        seeds = [b"phys_auth"],
-        bump
-    )]
-    pub physical_auth: SystemAccount<'info>,
-
-    #[account(
-        address = market_accounts::ID
-    )]
-    pub market_account_program: Program<'info, OrbitMarketAccounts>
-}
-
-#[derive(Accounts)]
-pub struct FundEscrow<'info>{
-    #[account(
-        mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::SellerConfirmed,
-        constraint = phys_transaction.metadata.escrow_account == escrow_account.key()
-    )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
-
-    #[account(
-        address = phys_transaction.metadata.buyer
-    )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
-
-    #[account(
-        mut,
-        seeds = [
-            b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
-        ],
-        bump
-    )]
-    pub escrow_account: SystemAccount<'info>,
-
-    #[account(
-        mut,
-        address = buyer_account.wallet
-    )]
-    pub buyer_wallet: Signer<'info>
-}
 
 #[derive(Accounts)]
 pub struct CloseTransactionAccount<'info>{
@@ -186,8 +72,8 @@ pub struct CloseTransactionAccount<'info>{
     pub buyer_wallet: SystemAccount<'info>
 }
 
-impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, OpenPhysicalTransaction<'a>, ClosePhysicalTransaction<'b>, FundEscrow<'c>, CloseTransactionAccount<'d>> for PhysicalTransaction{
-    fn open(ctx: Context<OpenPhysicalTransaction>, price: u64) -> Result<()>{
+impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, 'g, OpenPhysicalTransactionSol<'a>, OpenPhysicalTransactionSpl<'b>, ClosePhysicalTransactionSol<'c>, ClosePhysicalTransactionSpl<'d>, FundEscrowSol<'e>, FundEscrowSpl<'f>, CloseTransactionAccount<'g>> for PhysicalTransaction{
+    fn open_sol(ctx: Context<OpenPhysicalTransactionSol>, price: u64) -> Result<()>{
         ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
         ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.phys_product.metadata.seller.key();
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
@@ -200,9 +86,22 @@ impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, OpenPhysicalTransacti
         Ok(())
     }
 
-    fn close(ctx: Context<ClosePhysicalTransaction>) -> Result<()>{
+    fn open_spl(ctx: Context<OpenPhysicalTransactionSpl>, price: u64) -> Result<()>{
+        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
+        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.phys_product.metadata.seller.key();
+        ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
+        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
+        ctx.accounts.phys_transaction.metadata.transaction_price = price;
+
+        ctx.accounts.phys_transaction.metadata.funded = false;
+
+        ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
+        Ok(())
+    }
+
+    fn close_sol(ctx: Context<ClosePhysicalTransactionSol>) -> Result<()>{
         match ctx.bumps.get("escrow_account"){
-            Some(escrow_seeds) => close_escrow(
+            Some(escrow_seeds) => close_escrow_sol(
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.seller_wallet.to_account_info(),
                 &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
@@ -212,34 +111,52 @@ impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, OpenPhysicalTransacti
         }.expect("couldnt close escrow properly");
 
         match ctx.bumps.get("phys_auth"){
-            Some(auth_bump) => {
-                market_accounts::cpi::post_tx(
-                    CpiContext::new_with_signer(
-                        ctx.accounts.market_account_program.to_account_info(),
-                        IncrementTransactions{
-                            market_account: ctx.accounts.buyer_account.to_account_info(),
-                            invoker: ctx.accounts.physical_auth.to_account_info()
-                        },
-                        &[&[b"phys_auth", &[*auth_bump]]])
-                ).expect("could not properly invoke market-accounts program");
-                market_accounts::cpi::post_tx(
-                    CpiContext::new_with_signer(
-                        ctx.accounts.market_account_program.to_account_info(),
-                        IncrementTransactions{
-                            market_account: ctx.accounts.seller_account.to_account_info(),
-                            invoker: ctx.accounts.physical_auth.to_account_info()
-                        },
-                        &[&[b"phys_auth", &[*auth_bump]]])
-                )
-            },
+            Some(auth_bump) => post_tx_incrementing(
+                ctx.accounts.market_account_program.to_account_info(),
+                ctx.accounts.buyer_account.to_account_info(),
+                ctx.accounts.seller_account.to_account_info(),
+                ctx.accounts.physical_auth.to_account_info(),
+                &[&[b"phys_auth", &[*auth_bump]]]
+            ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
         }.expect("could not properly invoke market-accounts program");
         
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
-        ctx.accounts.phys_transaction.close(ctx.accounts.buyer_wallet.to_account_info()).map_err(|e| e)
+        Ok(())
     }
 
-    fn fund_escrow(ctx: Context<FundEscrow>) -> Result<()>{
+    fn close_spl(ctx: Context<ClosePhysicalTransactionSpl>) -> Result<()>{
+        match ctx.bumps.get("phys_auth"){
+            Some(auth_bump) => {
+                close_escrow_spl(
+                    ctx.accounts.token_program.to_account_info(),
+                    ctx.accounts.escrow_account.to_account_info(),
+                    ctx.accounts.seller_token_account.to_account_info(),
+                    ctx.accounts.physical_auth.to_account_info(),
+                    &[&[b"phys_auth", &[*auth_bump]]],
+                    ctx.accounts.phys_transaction.metadata.transaction_price,
+                    100
+                )
+            },
+            None => return err!(PhysicalMarketErrors::InvalidAuthBump)
+        }.expect("could not properly invoke market-accounts program");
+
+        match ctx.bumps.get("phys_auth"){
+            Some(auth_bump) => post_tx_incrementing(
+                ctx.accounts.market_account_program.to_account_info(),
+                ctx.accounts.buyer_account.to_account_info(),
+                ctx.accounts.seller_account.to_account_info(),
+                ctx.accounts.physical_auth.to_account_info(),
+                &[&[b"phys_auth", &[*auth_bump]]]
+            ),
+            None => return err!(PhysicalMarketErrors::InvalidAuthBump)
+        }.expect("could not properly invoke market-accounts program");
+
+        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        Ok(())
+    }
+
+    fn fund_escrow_sol(ctx: Context<FundEscrowSol>) -> Result<()>{
         invoke(
             &transfer(
                 &ctx.accounts.buyer_wallet.key(),
@@ -251,6 +168,23 @@ impl<'a, 'b, 'c, 'd> OrbitTransactionTrait<'a, 'b, 'c, 'd, OpenPhysicalTransacti
                 ctx.accounts.escrow_account.to_account_info()
             ]
         ).expect("could not fund escrow");
+        ctx.accounts.phys_transaction.metadata.funded = true;
+        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
+        Ok(())
+    }
+
+    fn fund_escrow_spl(ctx: Context<FundEscrowSpl>) -> Result<()>{
+        anchor_spl::token::transfer(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(), 
+                anchor_spl::token::Transfer{
+                    from: ctx.accounts.buyer_spl_wallet.to_account_info(),
+                    to: ctx.accounts.escrow_account.to_account_info(),
+                    authority: ctx.accounts.wallet_owner.to_account_info()
+                }
+            ),
+            ctx.accounts.phys_transaction.metadata.transaction_price
+        ).expect("could not fund escrow account. maybe check your balance");
         ctx.accounts.phys_transaction.metadata.funded = true;
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
         Ok(())
@@ -307,60 +241,7 @@ pub struct OpenPhysicalDispute<'info>{
     pub system_program: Program<'info, System>
 }
 
-#[derive(Accounts)]
-pub struct ClosePhysicalDispute<'info>{
-    #[account(
-        mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::Frozen,
-        constraint = (phys_transaction.metadata.seller == favor_market_account.key()) || (phys_transaction.metadata.buyer == favor_market_account.key()),
-        constraint = phys_transaction.metadata.escrow_account == escrow_account.key()
-    )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
-
-    #[account(
-        mut,
-        constraint = phys_dispute.dispute_transaction == phys_transaction.key(),
-        constraint = phys_dispute.dispute_state == DisputeState::Resolved,
-        has_one = favor,
-        has_one = funder
-    )]
-    pub phys_dispute: Account<'info, OrbitDispute>,
-
-    #[account(
-        mut,
-        // can not be default side
-        constraint = favor.key() != Pubkey::new_from_array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-    )]
-    pub favor: SystemAccount<'info>,
-
-    #[account(
-        constraint = favor_market_account.wallet == favor.key()
-    )]
-    pub favor_market_account: Account<'info, OrbitMarketAccount>,
-
-    #[account(mut)]
-    pub funder: SystemAccount<'info>,
-
-    #[account(
-        mut,
-        seeds = [
-            b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
-        ],
-        bump
-    )]
-    pub escrow_account: SystemAccount<'info>,
-
-    #[account(
-        seeds = [b"phys_auth"],
-        bump
-    )]
-    pub physical_auth: SystemAccount<'info>,
-
-    pub dispute_program: Program<'info, Dispute>,
-}
-
-impl<'a, 'b> OrbitDisputableTrait<'a, 'b, OpenPhysicalDispute<'a>, ClosePhysicalDispute<'b>> for PhysicalTransaction{
+impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, ClosePhysicalDisputeSol<'b>, ClosePhysicalDisputeSpl<'c>> for PhysicalTransaction{
     fn open_dispute(ctx: Context<OpenPhysicalDispute>, threshold: u8) -> Result<()>{
         if (!ctx.accounts.new_dispute.data_is_empty()) || (ctx.accounts.new_dispute.lamports() > 0){
             return err!(PhysicalMarketErrors::DisputeExists)
@@ -390,41 +271,65 @@ impl<'a, 'b> OrbitDisputableTrait<'a, 'b, OpenPhysicalDispute<'a>, ClosePhysical
         Ok(())
     }
     
-    fn close_dispute(ctx: Context<ClosePhysicalDispute>) -> Result<()>{
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
-
-        let mut res: Result<()> = match ctx.bumps.get("physical_auth"){
-            Some(signer_bump) => 
-                dispute::cpi::close_dispute(
-                    CpiContext::new_with_signer(
-                        ctx.accounts.dispute_program.to_account_info(),
-                        CloseDispute{
-                            dispute_account: ctx.accounts.phys_dispute.to_account_info(),
-                            funder: ctx.accounts.funder.to_account_info(),
-                            caller: ctx.accounts.physical_auth.to_account_info()
-                        },
-                        &[&[b"physical_auth", &[*signer_bump]]]
-                    )
-                ).map_err(|e| anchor_lang::error::Error::from(e))
-            ,
+    fn close_dispute_sol(ctx: Context<ClosePhysicalDisputeSol>) -> Result<()>{
+        match ctx.bumps.get("physical_auth"){
+            Some(auth_bump) => 
+            close_dispute_helper(
+                ctx.accounts.dispute_program.to_account_info(),
+                ctx.accounts.phys_dispute.to_account_info(),
+                ctx.accounts.funder.to_account_info(),
+                ctx.accounts.physical_auth.to_account_info(),
+                &[&[b"phys_auth", &[*auth_bump]]]
+            ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
-        };
-        if res.is_err(){return res};
+        }.expect("something went wrong");
 
 
-        res = match ctx.bumps.get("escrow_account"){
+        match ctx.bumps.get("escrow_account"){
             Some(escrow_bump) => 
-            close_escrow(
+            close_escrow_sol(
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.favor.to_account_info(),
                 &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
                 100
             ),
             None => return err!(PhysicalMarketErrors::InvalidEscrowBump)
-        };
-        if res.is_err(){return res};
+        }.expect("something went wrong");
 
-        ctx.accounts.phys_transaction.close(ctx.accounts.favor.to_account_info())
+        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        Ok(())
+    }
+
+    fn close_dispute_spl(ctx: Context<ClosePhysicalDisputeSpl>) -> Result<()>{
+        match ctx.bumps.get("physical_auth"){
+            Some(auth_bump) => 
+            close_dispute_helper(
+                ctx.accounts.dispute_program.to_account_info(),
+                ctx.accounts.phys_dispute.to_account_info(),
+                ctx.accounts.funder.to_account_info(),
+                ctx.accounts.physical_auth.to_account_info(),
+                &[&[b"phys_auth", &[*auth_bump]]]
+            ),
+            None => return err!(PhysicalMarketErrors::InvalidAuthBump)
+        }.expect("something went wrong");
+
+
+        match ctx.bumps.get("phys_auth"){
+            Some(auth_bump) => 
+            close_escrow_spl(
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.escrow_account.to_account_info(),
+                ctx.accounts.favor_token_account.to_account_info(),
+                ctx.accounts.physical_auth.to_account_info(),
+                &[&[b"phys_auth", &[*auth_bump]]],
+                ctx.accounts.phys_transaction.metadata.transaction_price,
+                100
+            ),
+            None => return err!(PhysicalMarketErrors::InvalidEscrowBump)
+        }.expect("something went wrong");
+
+        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        Ok(())
     }
 }
 

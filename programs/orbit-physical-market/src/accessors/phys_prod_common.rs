@@ -103,3 +103,8 @@ pub fn update_price_handler(ctx: Context<UpdateProductField>, price: u64) -> Res
     ctx.accounts.phys_product.metadata.price = price;
     Ok(())
 }
+
+pub fn update_currency_handler(ctx: Context<UpdateProductField>, currency: Pubkey) -> Result<()>{
+    ctx.accounts.phys_product.metadata.currency = currency;
+    Ok(())
+}

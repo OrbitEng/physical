@@ -38,30 +38,56 @@ pub mod orbit_physical_market {
         update_quantity_handler(ctx, qnt)
     }
 
+    pub fn update_currency(ctx: Context<UpdateProductField>, currency: Pubkey) -> Result<()>{
+        update_currency_handler(ctx, currency)
+    }
+
     //////////////////////////////////////////////
     /// TRANSACTION HANDLERS
 
-    pub fn open_transaction(ctx: Context<OpenPhysicalTransaction>, price: u64) -> Result<()>{
-        PhysicalTransaction::open(ctx, price)
+    /// SOL
+    pub fn open_transaction_sol(ctx: Context<OpenPhysicalTransactionSol>, price: u64) -> Result<()>{
+        PhysicalTransaction::open_sol(ctx, price)
     }
 
-    pub fn close_transaction(ctx: Context<ClosePhysicalTransaction>) -> Result<()>{
-        PhysicalTransaction::close(ctx)
+    pub fn close_transaction_sol(ctx: Context<ClosePhysicalTransactionSol>) -> Result<()>{
+        PhysicalTransaction::close_sol(ctx)
     }
 
-    pub fn fund_escrow(ctx: Context<FundEscrow>) -> Result<()>{
-        PhysicalTransaction::fund_escrow(ctx)
+    pub fn fund_escrow_sol(ctx: Context<FundEscrowSol>) -> Result<()>{
+        PhysicalTransaction::fund_escrow_sol(ctx)
     }
+
+    /// SPL
+    pub fn open_transaction_spl(ctx: Context<OpenPhysicalTransactionSpl>, price: u64) -> Result<()>{
+        PhysicalTransaction::open_spl(ctx, price)
+    }
+
+    pub fn close_transaction_spl(ctx: Context<ClosePhysicalTransactionSpl>) -> Result<()>{
+        PhysicalTransaction::close_spl(ctx)
+    }
+
+    pub fn fund_escrow_spl(ctx: Context<FundEscrowSpl>) -> Result<()>{
+        PhysicalTransaction::fund_escrow_spl(ctx)
+    }
+
     pub fn close_transaction_account(ctx: Context<CloseTransactionAccount>) -> Result<()>{
         PhysicalTransaction::close_transaction_account(ctx)
     }
+
+    ////////////////////////////////////
+    /// DISPUTE RELATED
 
     pub fn open_dispute(ctx: Context<OpenPhysicalDispute>, threshold: u8) -> Result<()>{
         PhysicalTransaction::open_dispute(ctx, threshold)
     }
 
-    pub fn close_dispute(ctx: Context<ClosePhysicalDispute>) -> Result<()>{
-        PhysicalTransaction::close_dispute(ctx)
+    pub fn close_dispute_sol(ctx: Context<ClosePhysicalDisputeSol>) -> Result<()>{
+        PhysicalTransaction::close_dispute_sol(ctx)
+    }
+
+    pub fn close_dispute_spl(ctx: Context<ClosePhysicalDisputeSpl>) -> Result<()>{
+        PhysicalTransaction::close_dispute_spl(ctx)
     }
 
     /////////////////////////////////////////////////

@@ -17,6 +17,7 @@ default = []
 
 [dependencies]
 anchor-lang = "0.25.0"
+anchor-spl = "0.25.0"
 product = {git = "https://github.com/bruh-capital/product"}
 transaction = {git = "https://github.com/bruh-capital/transaction"}
 market-accounts = {git = "https://github.com/bruh-capital/accounts", features = ["cpi"]}
