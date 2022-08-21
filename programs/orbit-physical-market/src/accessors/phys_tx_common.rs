@@ -37,7 +37,9 @@ use crate::{
     ClosePhysicalDisputeSpl,
 
     post_tx_incrementing,
-    close_dispute_helper
+    close_dispute_helper,
+
+    id
 };
 use dispute::{
     structs::{
@@ -64,6 +66,11 @@ pub struct CloseTransactionAccount<'info>{
             (market_account.key() == phys_transaction.metadata.seller)
     )]
     pub market_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        address = market_account.master_pubkey
+    )]
+    pub account_auth: Signer<'info>,
 
     #[account(
         mut,
@@ -221,13 +228,13 @@ pub struct OpenPhysicalDispute<'info>{
     #[account(
         // opener must be buyer or seller
         constraint = (opener.key() == phys_transaction.metadata.seller) || (opener.key() == phys_transaction.metadata.buyer),
-        // payer must be related to opener
-        constraint = payer.key() == opener.wallet
     )]
-    //
     pub opener: Account<'info, OrbitMarketAccount>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        address = opener.wallet
+    )]
     pub payer: Signer<'info>,
 
     #[account(
@@ -237,6 +244,21 @@ pub struct OpenPhysicalDispute<'info>{
     pub physical_auth: SystemAccount<'info>,
 
     pub dispute_program: Program<'info, Dispute>,
+
+    #[account(
+        address = phys_transaction.metadata.buyer
+    )]
+    pub buyer: Account<'info, OrbitMarketAccount>,
+    
+    #[account(
+        address = phys_transaction.metadata.seller
+    )]
+    pub seller: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        address = id()
+    )]
+    pub physical_program: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>
 }
@@ -257,6 +279,9 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                         new_dispute: ctx.accounts.new_dispute.to_account_info(),
                         in_transaction: ctx.accounts.phys_transaction.to_account_info(),
                         caller: ctx.accounts.physical_auth.to_account_info(),
+                        caller_program: ctx.accounts.physical_program.to_account_info(),
+                        buyer: ctx.accounts.buyer.to_account_info(),
+                        seller: ctx.accounts.seller.to_account_info(),
                         payer: ctx.accounts.payer.to_account_info(),
                         system_program: ctx.accounts.system_program.to_account_info()
                     },
