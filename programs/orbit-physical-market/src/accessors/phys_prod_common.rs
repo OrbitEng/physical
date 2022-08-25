@@ -21,7 +21,7 @@ pub struct ListPhysicalProduct<'info>{
 
     #[account(
         init,
-        space = 1000, // 106 + 8. leave room for adjustment during launch
+        space = 300, // 106 + 8. leave room for adjustment during launch
         payer = seller_wallet
     )]
     pub new_product: Account<'info, PhysicalProduct>,

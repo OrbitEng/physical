@@ -63,14 +63,15 @@ pub fn close_escrow_spl<'a>(token_program: AccountInfo<'a>, escrow_account: Acco
     Ok(())
 }
 
-pub fn close_dispute_helper<'a>(dispute_program: AccountInfo<'a>, dispute_struct: AccountInfo<'a>, funder: AccountInfo<'a>, phys_auth: AccountInfo<'a>, seeds: &[&[&[u8]]]) -> Result<()>{
+pub fn close_dispute_helper<'a>(dispute_program: AccountInfo<'a>, dispute_struct: AccountInfo<'a>, funder: AccountInfo<'a>, phys_auth: AccountInfo<'a>, program: AccountInfo<'a>, seeds: &[&[&[u8]]]) -> Result<()>{
     dispute::cpi::close_dispute(
         CpiContext::new_with_signer(
             dispute_program,
             CloseDispute{
                 dispute_account: dispute_struct,
                 funder: funder,
-                caller: phys_auth,
+                caller_auth: phys_auth,
+                caller: program
             },
             seeds
         )

@@ -16,7 +16,8 @@ use anchor_spl::token::{
 use transaction::transaction_struct::TransactionState;
 use crate::{
     PhysicalTransaction,
-    PhysicalProduct
+    PhysicalProduct,
+    id
 };
 
 /////////////////////////////////
@@ -29,7 +30,7 @@ pub struct OpenPhysicalTransactionSpl<'info>{
         payer = buyer_wallet,
         space = 1000
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         constraint = phys_product.metadata.currency != System::id()
@@ -69,7 +70,7 @@ pub struct OpenPhysicalTransactionSpl<'info>{
     pub token_program: Program<'info, Token>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub phys_auth: SystemAccount<'info>,
@@ -83,7 +84,7 @@ pub struct ClosePhysicalTransactionSpl<'info>{
         mut,
         constraint = phys_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         address = phys_transaction.metadata.buyer
@@ -125,14 +126,11 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub authority: Signer<'info>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub physical_auth: SystemAccount<'info>,
 
-    #[account(
-        address = market_accounts::ID
-    )]
     pub market_account_program: Program<'info, OrbitMarketAccounts>,
 
     pub token_program: Program<'info, Token>,
@@ -190,7 +188,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
         constraint = (phys_transaction.metadata.seller == favor_market_account.key()) || (phys_transaction.metadata.buyer == favor_market_account.key()),
         constraint = phys_transaction.metadata.escrow_account == escrow_account.key()
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         mut,
@@ -226,12 +224,18 @@ pub struct ClosePhysicalDisputeSpl<'info>{
     pub escrow_account: Account<'info, TokenAccount>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub physical_auth: SystemAccount<'info>,
 
     pub dispute_program: Program<'info, Dispute>,
+
+    #[account(
+        address = id()
+    )]
+    /// CHECK: can't use program struct
+    pub physical_program: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>
 }

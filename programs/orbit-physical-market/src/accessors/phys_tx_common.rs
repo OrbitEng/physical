@@ -86,6 +86,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
+        ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.phys_product.metadata.currency;
 
         ctx.accounts.phys_transaction.metadata.funded = false;
 
@@ -99,6 +100,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
+        ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.phys_product.metadata.currency;
 
         ctx.accounts.phys_transaction.metadata.funded = false;
 
@@ -123,7 +125,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                 ctx.accounts.buyer_account.to_account_info(),
                 ctx.accounts.seller_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
-                &[&[b"phys_auth", &[*auth_bump]]]
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
         }.expect("could not properly invoke market-accounts program");
@@ -140,7 +142,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.seller_token_account.to_account_info(),
                     ctx.accounts.physical_auth.to_account_info(),
-                    &[&[b"phys_auth", &[*auth_bump]]],
+                    &[&[b"market_authority", &[*auth_bump]]],
                     ctx.accounts.phys_transaction.metadata.transaction_price,
                     100
                 )
@@ -154,7 +156,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                 ctx.accounts.buyer_account.to_account_info(),
                 ctx.accounts.seller_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
-                &[&[b"phys_auth", &[*auth_bump]]]
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
         }.expect("could not properly invoke market-accounts program");
@@ -238,7 +240,7 @@ pub struct OpenPhysicalDispute<'info>{
     pub payer: Signer<'info>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub physical_auth: SystemAccount<'info>,
@@ -249,7 +251,7 @@ pub struct OpenPhysicalDispute<'info>{
         address = phys_transaction.metadata.buyer
     )]
     pub buyer: Account<'info, OrbitMarketAccount>,
-    
+
     #[account(
         address = phys_transaction.metadata.seller
     )]
@@ -258,6 +260,7 @@ pub struct OpenPhysicalDispute<'info>{
     #[account(
         address = id()
     )]
+    /// CHECK: can't use program struct
     pub physical_program: AccountInfo<'info>,
 
     pub system_program: Program<'info, System>
@@ -278,7 +281,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                     OpenDispute{
                         new_dispute: ctx.accounts.new_dispute.to_account_info(),
                         in_transaction: ctx.accounts.phys_transaction.to_account_info(),
-                        caller: ctx.accounts.physical_auth.to_account_info(),
+                        caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller_program: ctx.accounts.physical_program.to_account_info(),
                         buyer: ctx.accounts.buyer.to_account_info(),
                         seller: ctx.accounts.seller.to_account_info(),
@@ -287,7 +290,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                     },
                     &[&[b"physical_auth", &[*signer_bump]]]
                 ),
-                threshold as usize
+                threshold
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
         };
@@ -304,7 +307,8 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                 ctx.accounts.phys_dispute.to_account_info(),
                 ctx.accounts.funder.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
-                &[&[b"phys_auth", &[*auth_bump]]]
+                ctx.accounts.physical_program.to_account_info(),
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
         }.expect("something went wrong");
@@ -333,20 +337,21 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                 ctx.accounts.phys_dispute.to_account_info(),
                 ctx.accounts.funder.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
-                &[&[b"phys_auth", &[*auth_bump]]]
+                ctx.accounts.physical_program.to_account_info(),
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
         }.expect("something went wrong");
 
 
-        match ctx.bumps.get("phys_auth"){
+        match ctx.bumps.get("physical_auth"){
             Some(auth_bump) => 
             close_escrow_spl(
                 ctx.accounts.token_program.to_account_info(),
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.favor_token_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
-                &[&[b"phys_auth", &[*auth_bump]]],
+                &[&[b"market_authority", &[*auth_bump]]],
                 ctx.accounts.phys_transaction.metadata.transaction_price,
                 100
             ),
@@ -449,7 +454,7 @@ pub struct LeaveReview<'info>{
     pub accounts_program: Program<'info, OrbitMarketAccounts>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub phys_auth: SystemAccount<'info>,
@@ -472,7 +477,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                         ctx.accounts.accounts_program.to_account_info(),
                         ctx.accounts.reviewed_account.to_account_info(),
                         ctx.accounts.phys_auth.to_account_info(),
-                        &[&[b"phys_auth", &[*auth_bump]]],
+                        &[&[b"market_authority", &[*auth_bump]]],
                         rating
                     );
                     ctx.accounts.phys_transaction.reviews.buyer = true;
@@ -488,7 +493,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                         ctx.accounts.accounts_program.to_account_info(),
                         ctx.accounts.reviewed_account.to_account_info(),
                         ctx.accounts.phys_auth.to_account_info(),
-                        &[&[b"phys_auth", &[*auth_bump]]],
+                        &[&[b"market_authority", &[*auth_bump]]],
                         rating
                     );
                     ctx.accounts.phys_transaction.reviews.buyer = true;

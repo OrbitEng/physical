@@ -11,7 +11,8 @@ use dispute::{
 use transaction::transaction_struct::TransactionState;
 use crate::{
     PhysicalTransaction,
-    PhysicalProduct
+    PhysicalProduct,
+    id
 };
 
 /////////////////////////////////
@@ -24,7 +25,7 @@ pub struct OpenPhysicalTransactionSol<'info>{
         payer = buyer_wallet,
         space = 1000
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         constraint = phys_product.metadata.currency == System::id()
@@ -101,7 +102,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
     pub authority: Signer<'info>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub physical_auth: SystemAccount<'info>,
@@ -192,10 +193,16 @@ pub struct ClosePhysicalDisputeSol<'info>{
     pub escrow_account: SystemAccount<'info>,
 
     #[account(
-        seeds = [b"phys_auth"],
+        seeds = [b"market_authority"],
         bump
     )]
     pub physical_auth: SystemAccount<'info>,
+
+    #[account(
+        address = id()
+    )]
+    /// CHECK: can't use program struct
+    pub physical_program: AccountInfo<'info>,
 
     pub dispute_program: Program<'info, Dispute>,
 }

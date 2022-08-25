@@ -98,3 +98,16 @@ pub mod orbit_physical_market {
     }
 
 }
+
+// #[derive(Accounts)]
+// pub struct Initialize<'info>{
+//     #[accounts(
+//         init,
+//         seeds = [
+//             b"recent_catalog"
+//         ],
+//         bump,
+//         payer = payer
+//     )]
+//     pub catalog: SystemAccount
+// }
