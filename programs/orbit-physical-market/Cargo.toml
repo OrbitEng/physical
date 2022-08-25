@@ -22,3 +22,4 @@ product = {git = "https://github.com/OrbitEng/product"}
 transaction = {git = "https://github.com/OrbitEng/transaction"}
 market-accounts = {git = "https://github.com/OrbitEng/accounts", features = ["cpi"]}
 dispute = {git = "https://github.com/OrbitEng/dispute", features = ["cpi"]}
+orbit-catalog = {git = "https://github.com/OrbitEng/catalog", features = ["cpi"]}

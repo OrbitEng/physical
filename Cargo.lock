@@ -881,6 +881,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "orbit-catalog"
+version = "0.1.0"
+source = "git+https://github.com/OrbitEng/catalog#a11e3caba34dfc7eef96464345a4db9438347891"
+dependencies = [
+ "anchor-lang",
+ "orbit-addresses 0.1.0 (git+https://github.com/OrbitEng/addresses)",
+]
+
+[[package]]
 name = "orbit-physical-market"
 version = "0.1.0"
 dependencies = [
@@ -888,6 +897,7 @@ dependencies = [
  "anchor-spl",
  "dispute",
  "market-accounts",
+ "orbit-catalog",
  "product",
  "transaction",
 ]

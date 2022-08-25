@@ -2,7 +2,14 @@ use anchor_lang::{
     prelude::*,
     AccountsClose
 };
-use crate::{structs::physical_product::PhysicalProduct, errors::PhysicalMarketErrors};
+use orbit_catalog::{
+    catalog_struct::OrbitCatalogStruct,
+    cpi::{
+        accounts::EditCatalog,
+        edit_catalog
+    }, program::OrbitCatalog
+};
+use crate::{structs::physical_product::PhysicalProduct, errors::PhysicalMarketErrors, program::OrbitPhysicalMarket};
 use product::{
     product_trait::OrbitProductTrait,
     product_struct::OrbitProduct
@@ -34,7 +41,28 @@ pub struct ListPhysicalProduct<'info>{
     )]
     pub seller_wallet: Signer<'info>,
     
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"recent_catalog"
+        ],
+        bump
+    )]
+    pub recent_catalog: Account<'info, OrbitCatalogStruct>,
+
+    #[account(
+        seeds = [
+            b"market_auth"
+        ],
+        bump
+    )]
+    pub market_auth: SystemAccount<'info>,
+
+    pub catalog_program: Program<'info, OrbitCatalog>,
+
+    pub phys_program: Program<'info, OrbitPhysicalMarket>,
 }
 
 #[derive(Accounts)]
@@ -62,7 +90,21 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
             return err!(PhysicalMarketErrors::InvalidSellerForListing)
         }
         ctx.accounts.new_product.metadata = prod;
-        Ok(())
+
+        match ctx.bumps.get("market_auth"){
+            Some(auth_bump) => edit_catalog(
+                CpiContext::new_with_signer(
+                    ctx.accounts.catalog_program.to_account_info(),
+                    EditCatalog {
+                        catalog: ctx.accounts.recent_catalog.to_account_info(),
+                        product: ctx.accounts.new_product.to_account_info(),
+                        caller_auth: ctx.accounts.market_auth.to_account_info(),
+                        product_owner: ctx.accounts.phys_program.to_account_info()
+                    },
+                    &[&[b"market_auth", &[*auth_bump]]])
+            ),
+            None => err!(PhysicalMarketErrors::InvalidAuthBump)
+        }
     }
 
     fn unlist(ctx: Context<UnlistPhysicalProduct>) -> Result<()>{

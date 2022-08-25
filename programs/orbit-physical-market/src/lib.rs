@@ -18,6 +18,13 @@ pub mod orbit_physical_market {
     use transaction::transaction_trait::OrbitTransactionTrait;
     use dispute::OrbitDisputableTrait;
     use market_accounts::structs::OrbitMarketAccountTrait;
+
+    ///////////////////////////////////////////////////
+    /// INITIALIZERS
+    
+    pub fn init_recent_catalog(ctx: Context<CreatePhysRecentCatalog>) -> Result<()>{
+        recent_phys_catalog_handler(ctx)
+    }
     
     ///////////////////////////////////////////////////
     /// PRODUCT HANDLERS
@@ -98,16 +105,3 @@ pub mod orbit_physical_market {
     }
 
 }
-
-// #[derive(Accounts)]
-// pub struct Initialize<'info>{
-//     #[accounts(
-//         init,
-//         seeds = [
-//             b"recent_catalog"
-//         ],
-//         bump,
-//         payer = payer
-//     )]
-//     pub catalog: SystemAccount
-// }
