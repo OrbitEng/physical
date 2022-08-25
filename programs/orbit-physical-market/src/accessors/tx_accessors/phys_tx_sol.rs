@@ -12,7 +12,7 @@ use transaction::transaction_struct::TransactionState;
 use crate::{
     PhysicalTransaction,
     PhysicalProduct,
-    id
+    program::OrbitPhysicalMarket
 };
 
 /////////////////////////////////
@@ -198,11 +198,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     )]
     pub physical_auth: SystemAccount<'info>,
 
-    #[account(
-        address = id()
-    )]
-    /// CHECK: can't use program struct
-    pub physical_program: AccountInfo<'info>,
+    pub physical_program: Program<'info, OrbitPhysicalMarket>,
 
     pub dispute_program: Program<'info, Dispute>,
 }
