@@ -134,6 +134,8 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub market_account_program: Program<'info, OrbitMarketAccounts>,
 
     pub token_program: Program<'info, Token>,
+    
+    pub physical_program: Program<'info, OrbitPhysicalMarket>
 }
 
 #[derive(Accounts)]

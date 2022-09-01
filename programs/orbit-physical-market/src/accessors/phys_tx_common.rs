@@ -13,7 +13,6 @@ use market_accounts::{
         ReviewErrors
     },
     program::OrbitMarketAccounts,
-    cpi::accounts::SubmitRating,
     MarketAccountErrors
 };
 use transaction::{
@@ -38,8 +37,9 @@ use crate::{
 
     post_tx_incrementing,
     close_dispute_helper,
+    submit_rating_with_signer,
 
-    id
+    id, program::OrbitPhysicalMarket
 };
 use dispute::{
     structs::{
@@ -125,6 +125,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                 ctx.accounts.buyer_account.to_account_info(),
                 ctx.accounts.seller_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
+                ctx.accounts.physical_program.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]]
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
@@ -156,6 +157,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                 ctx.accounts.buyer_account.to_account_info(),
                 ctx.accounts.seller_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
+                ctx.accounts.physical_program.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]]
             ),
             None => return err!(PhysicalMarketErrors::InvalidAuthBump)
@@ -458,6 +460,8 @@ pub struct LeaveReview<'info>{
         bump
     )]
     pub phys_auth: SystemAccount<'info>,
+
+    pub physical_program: Program<'info, OrbitPhysicalMarket>
 }
 
 impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
@@ -477,6 +481,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                         ctx.accounts.accounts_program.to_account_info(),
                         ctx.accounts.reviewed_account.to_account_info(),
                         ctx.accounts.phys_auth.to_account_info(),
+                        ctx.accounts.physical_program.to_account_info(),
                         &[&[b"market_authority", &[*auth_bump]]],
                         rating
                     );
@@ -493,6 +498,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                         ctx.accounts.accounts_program.to_account_info(),
                         ctx.accounts.reviewed_account.to_account_info(),
                         ctx.accounts.phys_auth.to_account_info(),
+                        ctx.accounts.physical_program.to_account_info(),
                         &[&[b"market_authority", &[*auth_bump]]],
                         rating
                     );
@@ -509,19 +515,4 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
         Ok(())
     }
 
-}
-
-/// CHECK: has to be cpi because we can't write to a program we dont own (physical writing to market account directly)
-fn submit_rating_with_signer<'a>(market_program: AccountInfo<'a>, reviewed_account: AccountInfo<'a>, auth: AccountInfo<'a>, seeds: &[&[&[u8]]], rating: u8){
-    market_accounts::cpi::submit_rating(
-        CpiContext::new_with_signer(
-            market_program,
-            SubmitRating{
-                market_account: reviewed_account,
-                invoker: auth
-            },
-            seeds
-        ),
-        (rating-1) as usize
-    ).expect("could not call orbit accounts program");
 }

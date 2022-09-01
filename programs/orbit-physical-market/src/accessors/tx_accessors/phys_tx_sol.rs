@@ -110,7 +110,9 @@ pub struct ClosePhysicalTransactionSol<'info>{
     #[account(
         address = market_accounts::ID
     )]
-    pub market_account_program: Program<'info, OrbitMarketAccounts>
+    pub market_account_program: Program<'info, OrbitMarketAccounts>,
+
+    pub physical_program: Program<'info, OrbitPhysicalMarket>
 }
 
 #[derive(Accounts)]

@@ -544,7 +544,7 @@ source = "git+https://github.com/OrbitEng/dispute#2e472b5fb6380594fdd6862bd2dd81
 dependencies = [
  "anchor-lang",
  "market-accounts",
- "orbit-addresses 0.1.0 (git+https://github.com/OrbitEng/addresses)",
+ "orbit-addresses",
  "transaction",
 ]
 
@@ -751,9 +751,9 @@ dependencies = [
 
 [[package]]
 name = "lock_api"
-version = "0.4.7"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "327fa5b6a6940e4699ec49a9beae1ea4845c6bab9314e4f84ac68742139d8c53"
+checksum = "9f80bf5aacaf25cbfc8210d1cfb718f2bf3b11c4c54e5afe36c236853a8ec390"
 dependencies = [
  "autocfg",
  "scopeguard",
@@ -771,10 +771,10 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#caeac69b75b82c88f1fcea3b675dd79502d080fb"
+source = "git+https://github.com/OrbitEng/accounts#6335ea36bb7ebe8176d93d1aff7114456b50ecef"
 dependencies = [
  "anchor-lang",
- "orbit-addresses 0.1.0 (git+https://github.com/bruh-capital/addresses)",
+ "orbit-addresses",
 ]
 
 [[package]]
@@ -867,15 +867,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/bruh-capital/addresses#81d3cded0af4fe5f631310d10aca19c5f900c2c0"
-dependencies = [
- "anchor-lang",
-]
-
-[[package]]
-name = "orbit-addresses"
-version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#81d3cded0af4fe5f631310d10aca19c5f900c2c0"
+source = "git+https://github.com/OrbitEng/addresses#c5ad4fa95284ca2ce25a1981609a6941c8646c83"
 dependencies = [
  "anchor-lang",
 ]
@@ -886,7 +878,7 @@ version = "0.1.0"
 source = "git+https://github.com/OrbitEng/catalog#a11e3caba34dfc7eef96464345a4db9438347891"
 dependencies = [
  "anchor-lang",
- "orbit-addresses 0.1.0 (git+https://github.com/OrbitEng/addresses)",
+ "orbit-addresses",
 ]
 
 [[package]]
@@ -976,7 +968,7 @@ dependencies = [
 [[package]]
 name = "product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#60d58c5e49c7bfa12dee581f6c52de3ceb09e075"
+source = "git+https://github.com/OrbitEng/product#dc7bd9ad2935cf467c91a85f7f858ae2f2f2810e"
 dependencies = [
  "anchor-lang",
 ]
@@ -1221,9 +1213,9 @@ checksum = "2fd0db749597d91ff862fd1d55ea87f7855a744a8425a64695b6fca237d1dad1"
 
 [[package]]
 name = "solana-frozen-abi"
-version = "1.10.35"
+version = "1.10.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e73830d41b18597084df1d216b997c4a7396f0eb6674b4d411c30a4ba68d189"
+checksum = "95185172953a206d2aae8e4448d8f295c9b6e3304c43efded5192d3cc5b99d04"
 dependencies = [
  "bs58 0.4.0",
  "bv",
@@ -1243,9 +1235,9 @@ dependencies = [
 
 [[package]]
 name = "solana-frozen-abi-macro"
-version = "1.10.35"
+version = "1.10.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8dbca5d2413ddb4885b9bbaa14fdb9dd134539cabda8169a51b8990ee798bf4"
+checksum = "289cfcb10682a5338f7eb2d6b1c3564975176ec7e4fb3ee1d3ff5c52f4c397fd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1255,9 +1247,9 @@ dependencies = [
 
 [[package]]
 name = "solana-program"
-version = "1.10.35"
+version = "1.10.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "352ca385618fc739f45e98fde4b340cfd0570d3d1c31e1657a72fd71f51c6ead"
+checksum = "7eca3c0f4eec9c7df7c950ac2410ccbbc9beecba19da3135c3ed68425242bb96"
 dependencies = [
  "base64 0.13.0",
  "bincode",
@@ -1297,9 +1289,9 @@ dependencies = [
 
 [[package]]
 name = "solana-sdk-macro"
-version = "1.10.35"
+version = "1.10.38"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b65b8de75a25a8d7358b58d4a1899843f4c1e22fe5e760a4d1931adbc7975d9e"
+checksum = "dbabfc15b3d4ae7cb725b7959cf9de3ad29b53a76ec0babe6c2cb36049d2c582"
 dependencies = [
  "bs58 0.4.0",
  "proc-macro2",

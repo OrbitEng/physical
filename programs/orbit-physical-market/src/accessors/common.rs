@@ -4,7 +4,7 @@ use anchor_lang::solana_program::{
     program::invoke_signed
 };
 
-use market_accounts::cpi::accounts::IncrementTransactions;
+use market_accounts::cpi::accounts::PostTxContext;
 use dispute::cpi::accounts::CloseDispute;
 
 pub fn close_escrow_sol<'a>(escrow_account: AccountInfo<'a>, destination: AccountInfo<'a>, seeds: &[&[&[u8]]], rate: u8) -> Result<()>{
@@ -23,14 +23,15 @@ pub fn close_escrow_sol<'a>(escrow_account: AccountInfo<'a>, destination: Accoun
     
 }
 
-pub fn post_tx_incrementing<'a>(account_program: AccountInfo<'a>, buyer_acc: AccountInfo<'a>, seller_acc: AccountInfo<'a>, phys_auth: AccountInfo<'a>, seeds: &[&[&[u8]]]) -> Result<()>{
+pub fn post_tx_incrementing<'a>(account_program: AccountInfo<'a>, buyer_acc: AccountInfo<'a>, seller_acc: AccountInfo<'a>, phys_auth: AccountInfo<'a>, phys_program: AccountInfo<'a>, seeds: &[&[&[u8]]]) -> Result<()>{
     // we gotta clone :/
     market_accounts::cpi::post_tx(
         CpiContext::new_with_signer(
             account_program.to_account_info(),
-            IncrementTransactions{
-                market_account: buyer_acc,
-                invoker: seller_acc.to_account_info()
+            PostTxContext{
+                market_account: buyer_acc.to_account_info(),
+                caller_auth: phys_auth.to_account_info(),
+                caller: phys_program.to_account_info()
             },
             seeds
         )
@@ -38,9 +39,10 @@ pub fn post_tx_incrementing<'a>(account_program: AccountInfo<'a>, buyer_acc: Acc
     market_accounts::cpi::post_tx(
         CpiContext::new_with_signer(
             account_program,
-            IncrementTransactions{
+            PostTxContext{
                 market_account: seller_acc,
-                invoker: phys_auth
+                caller_auth: phys_auth,
+                caller: phys_program
             },
             seeds
         )
@@ -76,4 +78,21 @@ pub fn close_dispute_helper<'a>(dispute_program: AccountInfo<'a>, dispute_struct
             seeds
         )
     )
+}
+
+
+/// CHECK: has to be cpi because we can't write to a program we dont own (physical writing to market account directly)
+pub fn submit_rating_with_signer<'a>(market_program: AccountInfo<'a>, reviewed_account: AccountInfo<'a>, phys_auth: AccountInfo<'a>, phys_program: AccountInfo<'a>, seeds: &[&[&[u8]]], rating: u8){
+    market_accounts::cpi::submit_rating(
+        CpiContext::new_with_signer(
+            market_program,
+            PostTxContext{
+                market_account: reviewed_account,
+                caller_auth: phys_auth,
+                caller: phys_program
+            },
+            seeds
+        ),
+        (rating-1) as usize
+    ).expect("could not call orbit accounts program");
 }
