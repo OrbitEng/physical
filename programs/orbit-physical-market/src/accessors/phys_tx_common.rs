@@ -236,9 +236,11 @@ pub struct OpenPhysicalDispute<'info>{
     pub opener: Account<'info, OrbitMarketAccount>,
 
     #[account(
-        mut,
-        address = opener.wallet
+        address = opener.master_pubkey
     )]
+    pub opener_auth: Signer<'info>,
+
+    #[account(mut)]
     pub payer: Signer<'info>,
 
     #[account(
