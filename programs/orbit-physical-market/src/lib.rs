@@ -53,8 +53,8 @@ pub mod orbit_physical_market {
     /// TRANSACTION HANDLERS
 
     /// SOL
-    pub fn open_transaction_sol(ctx: Context<OpenPhysicalTransactionSol>, price: u64) -> Result<()>{
-        PhysicalTransaction::open_sol(ctx, price)
+    pub fn open_transaction_sol(ctx: Context<OpenPhysicalTransactionSol>, price: u64, use_discount: bool) -> Result<()>{
+        PhysicalTransaction::open_sol(ctx, price, use_discount)
     }
 
     pub fn close_transaction_sol(ctx: Context<ClosePhysicalTransactionSol>) -> Result<()>{
@@ -66,8 +66,8 @@ pub mod orbit_physical_market {
     }
 
     /// SPL
-    pub fn open_transaction_spl(ctx: Context<OpenPhysicalTransactionSpl>, price: u64) -> Result<()>{
-        PhysicalTransaction::open_spl(ctx, price)
+    pub fn open_transaction_spl(ctx: Context<OpenPhysicalTransactionSpl>, price: u64, use_discount: bool) -> Result<()>{
+        PhysicalTransaction::open_spl(ctx, price, use_discount)
     }
 
     pub fn close_transaction_spl(ctx: Context<ClosePhysicalTransactionSpl>) -> Result<()>{

@@ -31,9 +31,9 @@ pub struct ListPhysicalProduct<'info>{
         space = 300, // 106 + 8. leave room for adjustment during launch
         payer = seller_wallet
     )]
-    pub new_product: Account<'info, PhysicalProduct>,
+    pub new_product: Box<Account<'info, PhysicalProduct>>,
 
-    pub seller_account: Account<'info, OrbitMarketAccount>,
+    pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
@@ -71,9 +71,9 @@ pub struct UnlistPhysicalProduct<'info>{
         mut,
         constraint = phys_product.metadata.seller == seller_account.key()
     )]
-    pub phys_product: Account<'info, PhysicalProduct>,
+    pub phys_product: Box<Account<'info, PhysicalProduct>>,
 
-    pub seller_account: Account<'info, OrbitMarketAccount>,
+    pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,

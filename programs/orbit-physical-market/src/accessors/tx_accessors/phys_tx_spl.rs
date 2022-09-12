@@ -13,6 +13,7 @@ use anchor_spl::token::{
     Mint,
     Token
 };
+use orbit_multisig::Multisig;
 use transaction::transaction_struct::TransactionState;
 use crate::{
     PhysicalTransaction,
@@ -55,6 +56,7 @@ pub struct OpenPhysicalTransactionSpl<'info>{
     )]
     pub escrow_account: Account<'info, TokenAccount>,
 
+    #[account(mut)]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
     #[account(mut)]
@@ -89,7 +91,7 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     #[account(
         address = phys_transaction.metadata.buyer
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
@@ -100,7 +102,7 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     #[account(
         address = phys_transaction.metadata.seller
     )]
-    pub seller_account: Account<'info, OrbitMarketAccount>,
+    pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
@@ -135,7 +137,29 @@ pub struct ClosePhysicalTransactionSpl<'info>{
 
     pub token_program: Program<'info, Token>,
     
-    pub physical_program: Program<'info, OrbitPhysicalMarket>
+    pub physical_program: Program<'info, OrbitPhysicalMarket>,
+
+    #[account(
+        mut,
+        address = Pubkey::new(orbit_addresses::MULTISIG_WALLET_ADDRESS)
+    )]
+    pub multisig_address: Account<'info, Multisig>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"multisig_auth",
+            multisig_address.key().as_ref()
+        ],
+        bump,
+        seeds::program = orbit_multisig::ID
+    )]
+    pub multisig_owner: SystemAccount<'info>,
+
+    #[account(
+        constraint = multisig_ata.owner == multisig_owner.key()
+    )]
+    pub multisig_ata: Account<'info, TokenAccount>,
 }
 
 #[derive(Accounts)]
@@ -144,12 +168,12 @@ pub struct FundEscrowSpl<'info>{
         mut,
         constraint = phys_transaction.metadata.transaction_state == TransactionState::SellerConfirmed,
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         address = phys_transaction.metadata.buyer
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
@@ -199,7 +223,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
         // check this shit
         has_one = funder
     )]
-    pub phys_dispute: Account<'info, OrbitDispute>,
+    pub phys_dispute: Box<Account<'info, OrbitDispute>>,
 
     // wallet has to own this :P
     #[account(
@@ -208,9 +232,10 @@ pub struct ClosePhysicalDisputeSpl<'info>{
     pub favor_token_account: Account<'info, TokenAccount>,
 
     #[account(
+        mut,
         address = phys_dispute.favor
     )]
-    pub favor_market_account: Account<'info, OrbitMarketAccount>,
+    pub favor_market_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(mut)]
     pub funder: SystemAccount<'info>,
@@ -235,5 +260,27 @@ pub struct ClosePhysicalDisputeSpl<'info>{
 
     pub physical_program: Program<'info, OrbitPhysicalMarket>,
 
-    pub token_program: Program<'info, Token>
+    pub token_program: Program<'info, Token>,
+    
+    #[account(
+        mut,
+        address = Pubkey::new(orbit_addresses::MULTISIG_WALLET_ADDRESS)
+    )]
+    pub multisig_address: Account<'info, Multisig>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"multisig_auth",
+            multisig_address.key().as_ref()
+        ],
+        bump,
+        seeds::program = orbit_multisig::ID
+    )]
+    pub multisig_owner: SystemAccount<'info>,
+
+    #[account(
+        constraint = multisig_ata.owner == multisig_owner.key()
+    )]
+    pub multisig_ata: Account<'info, TokenAccount>,
 }

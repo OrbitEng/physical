@@ -8,6 +8,7 @@ use dispute::{
     DisputeState,
     OrbitDispute
 };
+use orbit_multisig::Multisig;
 use transaction::transaction_struct::TransactionState;
 use crate::{
     PhysicalTransaction,
@@ -41,6 +42,7 @@ pub struct OpenPhysicalTransactionSol<'info>{
     )]
     pub escrow_account: SystemAccount<'info>,
 
+    #[account(mut)]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
     #[account(mut)]
@@ -112,7 +114,22 @@ pub struct ClosePhysicalTransactionSol<'info>{
     )]
     pub market_account_program: Program<'info, OrbitMarketAccounts>,
 
-    pub physical_program: Program<'info, OrbitPhysicalMarket>
+    pub physical_program: Program<'info, OrbitPhysicalMarket>,
+    
+    #[account(
+        mut,
+        address = Pubkey::new(orbit_addresses::MULTISIG_WALLET_ADDRESS)
+    )]
+    pub multisig_address: Account<'info, Multisig>,
+
+    #[account(
+        mut,
+        seeds = [
+            multisig_address.key().as_ref()
+        ],
+        bump = multisig_address.nonce
+    )]
+    pub multisig_wallet: SystemAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -175,6 +192,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     pub favor: SystemAccount<'info>,
 
     #[account(
+        mut,
         address = phys_dispute.favor
     )]
     pub favor_market_account: Account<'info, OrbitMarketAccount>,
@@ -203,4 +221,19 @@ pub struct ClosePhysicalDisputeSol<'info>{
     pub physical_program: Program<'info, OrbitPhysicalMarket>,
 
     pub dispute_program: Program<'info, Dispute>,
+
+    #[account(
+        mut,
+        address = Pubkey::new(orbit_addresses::MULTISIG_WALLET_ADDRESS)
+    )]
+    pub multisig_address: Account<'info, Multisig>,
+
+    #[account(
+        mut,
+        seeds = [
+            multisig_address.key().as_ref()
+        ],
+        bump = multisig_address.nonce
+    )]
+    pub multisig_wallet: SystemAccount<'info>,
 }
