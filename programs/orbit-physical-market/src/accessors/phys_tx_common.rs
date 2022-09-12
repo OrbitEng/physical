@@ -17,13 +17,12 @@ use market_accounts::{
 };
 use transaction::{
     transaction_struct::TransactionState,
-    transaction_trait::OrbitTransactionTrait
+    transaction_trait::OrbitTransactionTrait,
+    transaction_utils::*
 };
 use crate::{
     PhysicalTransaction,
     errors::PhysicalMarketErrors,
-    close_escrow_sol,
-    close_escrow_spl,
     
     OpenPhysicalTransactionSol,
     ClosePhysicalTransactionSol,
@@ -35,18 +34,19 @@ use crate::{
     FundEscrowSpl,
     ClosePhysicalDisputeSpl,
 
-    post_tx_incrementing,
-    close_dispute_helper,
-    submit_rating_with_signer,
-
     id, program::OrbitPhysicalMarket
 };
 use dispute::{
-    structs::{
-        dispute_trait::OrbitDisputableTrait
-    },
+    structs::dispute_trait::OrbitDisputableTrait,
     program::Dispute,
-    cpi::accounts::OpenDispute
+    cpi::accounts::{
+        OpenDispute,
+        CloseDispute
+    }
+};
+use anchor_spl::token::{
+    accessor::amount,
+    TokenAccount
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -95,7 +95,6 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
         ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.phys_product.metadata.currency;
-        
 
         ctx.accounts.phys_transaction.metadata.funded = false;
 
@@ -125,16 +124,40 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         Ok(())
     }
 
-    fn close_sol(ctx: Context<ClosePhysicalTransactionSol>) -> Result<()>{
+    fn close_sol(ctx: Context<'_, '_, '_, 'c, ClosePhysicalTransactionSol<'c>>) -> Result<()>{
         match ctx.bumps.get("escrow_account"){
             Some(escrow_seeds) => {
-                close_escrow_sol(
-                    ctx.accounts.escrow_account.to_account_info(),
-                    ctx.accounts.multisig_wallet.to_account_info(),
-                    &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                    100-ctx.accounts.phys_transaction.metadata.rate
-                ).expect("couldnt close escrow");
-                close_escrow_sol(
+                if ctx.accounts.phys_transaction.metadata.rate == 95{
+                    let bal = ctx.accounts.escrow_account.lamports();
+                    let mut residual_amt = bal * 5/100;
+                    if  (ctx.accounts.buyer_account.reflink != Pubkey::new(&[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])) &&
+                        (ctx.remaining_accounts[0].key() == ctx.accounts.buyer_account.reflink)
+                    {
+                        let reflink_amt = bal * 25 / 10000;
+                        residual_amt = bal * 45/1000;
+                        close_escrow_sol_flat(
+                            ctx.accounts.escrow_account.to_account_info(),
+                            ctx.accounts.buyer_wallet.to_account_info(),
+                            &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                            reflink_amt
+                        ).expect("couldnt close escrow");
+                        let reflink_wallet = SystemAccount::try_from(&ctx.remaining_accounts[0].to_account_info()).expect("system account");
+                        close_escrow_sol_flat(
+                            ctx.accounts.escrow_account.to_account_info(),
+                            reflink_wallet.to_account_info(),
+                            &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                            reflink_amt
+                        ).expect("couldnt close escrow");
+                    }
+                    close_escrow_sol_flat(
+                        ctx.accounts.escrow_account.to_account_info(),
+                        ctx.accounts.multisig_wallet.to_account_info(),
+                        &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                        residual_amt
+                    ).expect("couldnt close escrow");
+                }
+                
+                close_escrow_sol_rate(
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.seller_wallet.to_account_info(),
                     &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
@@ -160,19 +183,51 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         Ok(())
     }
 
-    fn close_spl(ctx: Context<ClosePhysicalTransactionSpl>) -> Result<()>{
+    fn close_spl(ctx: Context<'_, '_, '_, 'd, ClosePhysicalTransactionSpl<'d>>) -> Result<()>{
         match ctx.bumps.get("phys_auth"){
             Some(auth_bump) => {
-                close_escrow_spl(
-                    ctx.accounts.token_program.to_account_info(),
-                    ctx.accounts.escrow_account.to_account_info(),
-                    ctx.accounts.multisig_ata.to_account_info(),
-                    ctx.accounts.physical_auth.to_account_info(),
-                    &[&[b"market_authority", &[*auth_bump]]],
-                    ctx.accounts.phys_transaction.metadata.transaction_price,
-                    100-ctx.accounts.phys_transaction.metadata.rate
-                ).expect("couldnt close escrow");
-                close_escrow_spl(
+
+                if ctx.accounts.phys_transaction.metadata.rate == 95{
+                    let bal = amount(&ctx.accounts.escrow_account.to_account_info()).expect("could not deserialize token account");
+                    let mut residual_amt = bal * 5/100;
+                    if  (ctx.accounts.buyer_account.reflink != Pubkey::new(&[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])) &&
+                        (ctx.remaining_accounts[0].key() == ctx.accounts.buyer_account.reflink)
+                    {
+                        let reflink_amt = bal * 25 / 10000;
+                        residual_amt = bal * 45/1000;
+                        close_escrow_spl_flat(
+                            ctx.accounts.token_program.to_account_info(),
+                            ctx.accounts.escrow_account.to_account_info(),
+                            ctx.accounts.buyer_token_account.to_account_info(),
+                            ctx.accounts.physical_auth.to_account_info(),
+                            &[&[b"market_authority", &[*auth_bump]]],
+                            reflink_amt
+                        ).expect("couldnt close escrow");
+                        
+                        let reflink_token_account = Account::<TokenAccount>::try_from(&ctx.remaining_accounts[1].to_account_info()).expect("could not deserialize token account (remaining accounts 1)");
+                        if reflink_token_account.owner != ctx.accounts.buyer_account.reflink{
+                            return err!(PhysicalMarketErrors::InvalidReflink)
+                        }
+                        close_escrow_spl_flat(
+                            ctx.accounts.token_program.to_account_info(),
+                            ctx.accounts.escrow_account.to_account_info(),
+                            reflink_token_account.to_account_info(),
+                            ctx.accounts.physical_auth.to_account_info(),
+                            &[&[b"market_authority", &[*auth_bump]]],
+                            reflink_amt
+                        ).expect("couldnt close escrow");
+                    }
+                    close_escrow_spl_flat(
+                        ctx.accounts.token_program.to_account_info(),
+                        ctx.accounts.escrow_account.to_account_info(),
+                        ctx.accounts.multisig_ata.to_account_info(),
+                        ctx.accounts.physical_auth.to_account_info(),
+                        &[&[b"market_authority", &[*auth_bump]]],
+                        residual_amt
+                    ).expect("couldnt close escrow");
+                }
+                
+                close_escrow_spl_rate(
                     ctx.accounts.token_program.to_account_info(),
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.seller_token_account.to_account_info(),
@@ -304,6 +359,21 @@ pub struct OpenPhysicalDispute<'info>{
     pub system_program: Program<'info, System>
 }
 
+pub fn close_dispute_helper<'a>(dispute_program: AccountInfo<'a>, dispute_struct: AccountInfo<'a>, funder: AccountInfo<'a>, program_auth: AccountInfo<'a>, program: AccountInfo<'a>, seeds: &[&[&[u8]]]) -> Result<()>{
+    dispute::cpi::close_dispute(
+        CpiContext::new_with_signer(
+            dispute_program,
+            CloseDispute{
+                dispute_account: dispute_struct,
+                funder: funder,
+                caller_auth: program_auth,
+                caller: program
+            },
+            seeds
+        )
+    )
+}
+
 impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, ClosePhysicalDisputeSol<'b>, ClosePhysicalDisputeSpl<'c>> for PhysicalTransaction{
     fn open_dispute(ctx: Context<OpenPhysicalDispute>, threshold: u8) -> Result<()>{
         if (!ctx.accounts.new_dispute.data_is_empty()) || (ctx.accounts.new_dispute.lamports() > 0){
@@ -340,13 +410,16 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     fn close_dispute_sol(ctx: Context<ClosePhysicalDisputeSol>) -> Result<()>{
         match ctx.bumps.get("escrow_account"){
             Some(escrow_bump) => {
-                close_escrow_sol(
-                    ctx.accounts.escrow_account.to_account_info(),
-                    ctx.accounts.multisig_wallet.to_account_info(),
-                    &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
-                    100-ctx.accounts.phys_transaction.metadata.rate
-                ).expect("couldnt close dispute escrow");
-                close_escrow_sol(
+                // no reflink or discount option for disputes
+                if ctx.accounts.phys_transaction.metadata.rate == 95{
+                    close_escrow_sol_rate(
+                        ctx.accounts.escrow_account.to_account_info(),
+                        ctx.accounts.multisig_wallet.to_account_info(),
+                        &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
+                        100 - ctx.accounts.phys_transaction.metadata.rate
+                    ).expect("couldnt close escrow");
+                }
+                close_escrow_sol_rate(
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.favor.to_account_info(),
                     &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
@@ -380,7 +453,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     fn close_dispute_spl(ctx: Context<ClosePhysicalDisputeSpl>) -> Result<()>{
         match ctx.bumps.get("physical_auth"){
             Some(auth_bump) => {
-                close_escrow_spl(
+                close_escrow_spl_rate(
                     ctx.accounts.token_program.to_account_info(),
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.multisig_ata.to_account_info(),
@@ -389,7 +462,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                     ctx.accounts.phys_transaction.metadata.transaction_price,
                     100-ctx.accounts.phys_transaction.metadata.rate
                 ).expect("couldnt close dispute escrow");
-                close_escrow_spl(
+                close_escrow_spl_rate(
                     ctx.accounts.token_program.to_account_info(),
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.favor_token_account.to_account_info(),

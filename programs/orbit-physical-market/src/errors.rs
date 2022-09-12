@@ -10,4 +10,6 @@ pub enum PhysicalMarketErrors{
     InvalidAuthBump,
     #[msg("invalid seller for listing")]
     InvalidSellerForListing,
+    #[msg("invalid reflink passed")]
+    InvalidReflink,
 }

@@ -95,9 +95,9 @@ pub struct ClosePhysicalTransactionSpl<'info>{
 
     #[account(
         mut,
-        address = buyer_account.wallet
+        constraint = buyer_token_account.owner == buyer_account.wallet
     )]
-    pub buyer_wallet: SystemAccount<'info>,
+    pub buyer_token_account: Account<'info, TokenAccount>,
 
     #[account(
         address = phys_transaction.metadata.seller

@@ -236,4 +236,12 @@ pub struct ClosePhysicalDisputeSol<'info>{
         bump = multisig_address.nonce
     )]
     pub multisig_wallet: SystemAccount<'info>,
+    
+    #[account(
+        address = phys_transaction.metadata.buyer
+    )]
+    pub buyer_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(mut)]
+    pub buyer_wallet: Signer<'info>,
 }
