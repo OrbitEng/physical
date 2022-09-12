@@ -868,7 +868,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#04cd1d2ae80fd3ab7bc51e57bc201a82478812dd"
+source = "git+https://github.com/OrbitEng/addresses#2de6c09d765f09846be8a12f6e4a6ef188b23e0a"
 dependencies = [
  "anchor-lang",
 ]
