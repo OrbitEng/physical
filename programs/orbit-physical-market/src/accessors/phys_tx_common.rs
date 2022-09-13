@@ -44,10 +44,7 @@ use dispute::{
         CloseDispute
     }
 };
-use anchor_spl::token::{
-    accessor::amount,
-    TokenAccount
-};
+use anchor_spl::token::accessor::amount;
 
 ////////////////////////////////////////////////////////////////////
 /// ORBIT BASE TRANSACTION FUNCTIONALITIES
@@ -141,13 +138,19 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                             &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
                             reflink_amt
                         ).expect("couldnt close escrow");
-                        let reflink_wallet = SystemAccount::try_from(&ctx.remaining_accounts[0].to_account_info()).expect("system account");
-                        close_escrow_sol_flat(
-                            ctx.accounts.escrow_account.to_account_info(),
-                            reflink_wallet.to_account_info(),
-                            &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                            reflink_amt
-                        ).expect("couldnt close escrow");
+                        
+                        match remaining_accounts_to_wallet(ctx.remaining_accounts){
+                            Ok(reflink_wallet) => {
+                                close_escrow_sol_flat(
+                                    ctx.accounts.escrow_account.to_account_info(),
+                                    reflink_wallet.to_account_info(),
+                                    &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                                    reflink_amt
+                                ).expect("couldnt close escrow");
+                                reflink_wallet.exit(ctx.program_id)?;
+                            },
+                            Err(e) => return Err(e)
+                        }
                     }
                     close_escrow_sol_flat(
                         ctx.accounts.escrow_account.to_account_info(),
@@ -203,19 +206,22 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                             &[&[b"market_authority", &[*auth_bump]]],
                             reflink_amt
                         ).expect("couldnt close escrow");
-                        
-                        let reflink_token_account = Account::<TokenAccount>::try_from(&ctx.remaining_accounts[1].to_account_info()).expect("could not deserialize token account (remaining accounts 1)");
-                        if reflink_token_account.owner != ctx.accounts.buyer_account.reflink{
-                            return err!(PhysicalMarketErrors::InvalidReflink)
+
+                        match remaining_accounts_to_token_account(ctx.remaining_accounts){
+                            Ok(reflink_token_account) => {
+                                close_escrow_spl_flat(
+                                    ctx.accounts.token_program.to_account_info(),
+                                    ctx.accounts.escrow_account.to_account_info(),
+                                    reflink_token_account.to_account_info(),
+                                    ctx.accounts.physical_auth.to_account_info(),
+                                    &[&[b"market_authority", &[*auth_bump]]],
+                                    reflink_amt
+                                ).expect("couldnt close escrow");
+                                reflink_token_account.exit(ctx.program_id)?;
+                            },
+                            Err(e) => return Err(e)
                         }
-                        close_escrow_spl_flat(
-                            ctx.accounts.token_program.to_account_info(),
-                            ctx.accounts.escrow_account.to_account_info(),
-                            reflink_token_account.to_account_info(),
-                            ctx.accounts.physical_auth.to_account_info(),
-                            &[&[b"market_authority", &[*auth_bump]]],
-                            reflink_amt
-                        ).expect("couldnt close escrow");
+                        
                     }
                     close_escrow_spl_flat(
                         ctx.accounts.token_program.to_account_info(),
