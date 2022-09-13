@@ -141,6 +141,8 @@ pub fn update_quantity_handler(ctx: Context<UpdateProductField>, qnt: u32) -> Re
     Ok(())
 }
 
+/// GENERAL
+
 pub fn update_price_handler(ctx: Context<UpdateProductField>, price: u64) -> Result<()>{
     ctx.accounts.phys_product.metadata.price = price;
     Ok(())
@@ -148,5 +150,10 @@ pub fn update_price_handler(ctx: Context<UpdateProductField>, price: u64) -> Res
 
 pub fn update_currency_handler(ctx: Context<UpdateProductField>, currency: Pubkey) -> Result<()>{
     ctx.accounts.phys_product.metadata.currency = currency;
+    Ok(())
+}
+
+pub fn set_media_handler(ctx: Context<UpdateProductField>, link: String) -> Result<()>{
+    ctx.accounts.phys_product.metadata.media = link;
     Ok(())
 }
