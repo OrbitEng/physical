@@ -175,7 +175,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
         constraint = phys_transaction.metadata.transaction_state == TransactionState::Frozen,
         constraint = (phys_transaction.metadata.seller == favor_market_account.key()) || (phys_transaction.metadata.buyer == favor_market_account.key()),
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         mut,
@@ -183,7 +183,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
         constraint = phys_dispute.dispute_state == DisputeState::Resolved,
         has_one = funder
     )]
-    pub phys_dispute: Account<'info, OrbitDispute>,
+    pub phys_dispute: Box<Account<'info, OrbitDispute>>,
 
     #[account(
         mut,
@@ -195,7 +195,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
         mut,
         address = phys_dispute.favor
     )]
-    pub favor_market_account: Account<'info, OrbitMarketAccount>,
+    pub favor_market_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(mut)]
     pub funder: SystemAccount<'info>,
@@ -240,7 +240,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     #[account(
         address = phys_transaction.metadata.buyer
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(mut)]
     pub buyer_wallet: Signer<'info>,

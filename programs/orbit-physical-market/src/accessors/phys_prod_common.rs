@@ -3,7 +3,7 @@ use anchor_lang::{
     AccountsClose
 };
 use orbit_catalog::{
-    catalog_struct::OrbitCatalogStruct,
+    catalog_struct::OrbitModCatalogStruct,
     cpi::{
         accounts::EditCatalog,
         edit_catalog
@@ -50,7 +50,7 @@ pub struct ListPhysicalProduct<'info>{
         ],
         bump
     )]
-    pub recent_catalog: Account<'info, OrbitCatalogStruct>,
+    pub recent_catalog: Account<'info, OrbitModCatalogStruct>,
 
     #[account(
         seeds = [
@@ -98,8 +98,7 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
                     EditCatalog {
                         catalog: ctx.accounts.recent_catalog.to_account_info(),
                         product: ctx.accounts.new_product.to_account_info(),
-                        caller_auth: ctx.accounts.market_auth.to_account_info(),
-                        product_owner: ctx.accounts.phys_program.to_account_info()
+                        caller_auth: ctx.accounts.market_auth.to_account_info()
                     },
                     &[&[b"market_auth", &[*auth_bump]]])
             ),
