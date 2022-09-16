@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use crate::errors::PhysicalMarketErrors;
 use orbit_catalog::{cpi::{
-    accounts::CreateCatalog,
+    accounts::CreateModCatalog,
     create_catalog
 }, program::OrbitCatalog};
 
@@ -36,7 +36,7 @@ pub fn recent_phys_catalog_handler(ctx: Context<CreatePhysRecentCatalog>) -> Res
         Some(auth_bump) => create_catalog(
             CpiContext::new_with_signer(
                 ctx.accounts.catalog_program.to_account_info(),
-                CreateCatalog {
+                CreateModCatalog {
                     catalog: ctx.accounts.catalog.to_account_info(),
                     caller_auth: ctx.accounts.market_auth.to_account_info(),
                     payer: ctx.accounts.payer.to_account_info(),

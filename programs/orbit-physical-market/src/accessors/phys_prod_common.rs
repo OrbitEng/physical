@@ -5,7 +5,7 @@ use anchor_lang::{
 use orbit_catalog::{
     catalog_struct::OrbitModCatalogStruct,
     cpi::{
-        accounts::EditCatalog,
+        accounts::EditModCatalog,
         edit_catalog
     }, program::OrbitCatalog
 };
@@ -95,7 +95,7 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
             Some(auth_bump) => edit_catalog(
                 CpiContext::new_with_signer(
                     ctx.accounts.catalog_program.to_account_info(),
-                    EditCatalog {
+                    EditModCatalog {
                         catalog: ctx.accounts.recent_catalog.to_account_info(),
                         product: ctx.accounts.new_product.to_account_info(),
                         caller_auth: ctx.accounts.market_auth.to_account_info()
