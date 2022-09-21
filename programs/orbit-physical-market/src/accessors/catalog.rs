@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use crate::errors::PhysicalMarketErrors;
 use orbit_catalog::{cpi::{
     accounts::CreateModCatalog,
-    create_catalog
+    create_mod_catalog
 }, program::OrbitCatalog};
 
 #[derive(Accounts)]
@@ -33,7 +33,7 @@ pub struct CreatePhysRecentCatalog<'info>{
 
 pub fn recent_phys_catalog_handler(ctx: Context<CreatePhysRecentCatalog>) -> Result<()>{
     match ctx.bumps.get("market_auth"){
-        Some(auth_bump) => create_catalog(
+        Some(auth_bump) => create_mod_catalog(
             CpiContext::new_with_signer(
                 ctx.accounts.catalog_program.to_account_info(),
                 CreateModCatalog {
