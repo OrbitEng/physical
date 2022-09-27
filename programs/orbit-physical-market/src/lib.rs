@@ -49,10 +49,10 @@ pub mod orbit_physical_market {
         update_currency_handler(ctx, currency)
     }
     pub fn set_media(ctx: Context<UpdateProductField>, link: String) -> Result<()>{
-        set_media_handler(ctx, link)
+        update_media_handler(ctx, link)
     }
-    pub fn set_name(ctx: Context<UpdateProductField>, name: String) -> Result<()>{
-        set_name_handler(ctx, name)
+    pub fn set_prod_info(ctx: Context<UpdateProductField>, info: String) -> Result<()>{
+        update_info_handler(ctx, info)
     }
 
     //////////////////////////////////////////////
