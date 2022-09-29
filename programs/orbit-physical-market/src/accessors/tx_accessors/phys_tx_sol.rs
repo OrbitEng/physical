@@ -42,16 +42,18 @@ pub struct OpenPhysicalTransactionSol<'info>{
     )]
     pub escrow_account: SystemAccount<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [
+            b"orbit_account",
+            buyer_wallet.key().as_ref()
+        ],
+        bump
+    )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
     #[account(mut)]
     pub buyer_wallet: Signer<'info>,
-
-    #[account(
-        address = buyer_account.master_pubkey
-    )]
-    pub buyer_auth: Signer<'info>,
 
     pub system_program: Program<'info, System>
 }
@@ -99,11 +101,6 @@ pub struct ClosePhysicalTransactionSol<'info>{
     pub escrow_account: SystemAccount<'info>,
 
     #[account(
-        constraint = (authority.key() == seller_account.master_pubkey) || (authority.key() == buyer_account.master_pubkey)
-    )]
-    pub authority: Signer<'info>,
-
-    #[account(
         seeds = [b"market_authority"],
         bump
     )]
@@ -142,7 +139,12 @@ pub struct FundEscrowSol<'info>{
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.buyer
+        address = phys_transaction.metadata.buyer,
+        seeds = [
+            b"orbit_account",
+            buyer_wallet.key().as_ref()
+        ],
+        bump
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
@@ -157,12 +159,7 @@ pub struct FundEscrowSol<'info>{
     pub escrow_account: SystemAccount<'info>,
 
     #[account(mut)]
-    pub buyer_wallet: Signer<'info>,
-
-    #[account(
-        address = buyer_account.master_pubkey
-    )]
-    pub buyer_auth: Signer<'info>
+    pub buyer_wallet: Signer<'info>
 }
 
 ////////////////////////////////////////////////////

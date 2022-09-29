@@ -12,4 +12,6 @@ pub enum PhysicalMarketErrors{
     InvalidSellerForListing,
     #[msg("invalid reflink passed")]
     InvalidReflink,
+    #[msg("not a transaction participant")]
+    InvalidTransactionInvoker,
 }

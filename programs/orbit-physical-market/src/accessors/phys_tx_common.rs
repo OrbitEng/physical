@@ -9,13 +9,13 @@ use anchor_lang::{
 use market_accounts::{
     structs::{
         market_account::OrbitMarketAccount,
-        OrbitMarketAccountTrait,
-        ReviewErrors
+        OrbitMarketAccountTrait
     },
     program::OrbitMarketAccounts,
     MarketAccountErrors
 };
 use transaction::{
+    transaction_errors::ReviewErrors,
     transaction_struct::TransactionState,
     transaction_trait::OrbitTransactionTrait,
     transaction_utils::*
@@ -414,6 +414,10 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     }
     
     fn close_dispute_sol(ctx: Context<ClosePhysicalDisputeSol>) -> Result<()>{
+        if !(ctx.accounts.buyer_account.to_account_info().is_signer || ctx.accounts.seller_account.to_account_info().is_signer){
+            return err!(PhysicalMarketErrors::InvalidTransactionInvoker)
+        };
+
         match ctx.bumps.get("escrow_account"){
             Some(escrow_bump) => {
                 // no reflink or discount option for disputes
@@ -457,6 +461,10 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     }
 
     fn close_dispute_spl(ctx: Context<ClosePhysicalDisputeSpl>) -> Result<()>{
+        if !(ctx.accounts.buyer_account.to_account_info().is_signer || ctx.accounts.seller_account.to_account_info().is_signer){
+            return err!(PhysicalMarketErrors::InvalidTransactionInvoker)
+        };
+
         match ctx.bumps.get("physical_auth"){
             Some(auth_bump) => {
                 close_escrow_spl_rate(
@@ -585,11 +593,18 @@ pub struct LeaveReview<'info>{
         constraint = 
         (reviewer.key() == phys_transaction.metadata.seller) ||
         (reviewer.key() == phys_transaction.metadata.buyer),
-        has_one = master_pubkey
+        seeds = [
+            b"orbit_account",
+            wallet.key().as_ref()
+        ],
+        bump
     )]
     pub reviewer: Account<'info, OrbitMarketAccount>,
 
-    pub master_pubkey: Signer<'info>,
+    #[account(
+        address = reviewer.wallet
+    )]
+    pub wallet: Signer<'info>,
 
     pub accounts_program: Program<'info, OrbitMarketAccounts>,
 
@@ -623,11 +638,10 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                         &[&[b"market_authority", &[*auth_bump]]],
                         rating
                     );
-                    ctx.accounts.phys_transaction.reviews.buyer = true;
+                    ctx.accounts.phys_transaction.metadata.reviews.seller = true;
                 },
                 None => return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
             }
-            ctx.accounts.phys_transaction.reviews.seller = true;
         }else
         if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.key()  && !ctx.accounts.phys_transaction.reviews.buyer{
             match ctx.bumps.get("phys_auth"){
@@ -640,11 +654,10 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                         &[&[b"market_authority", &[*auth_bump]]],
                         rating
                     );
-                    ctx.accounts.phys_transaction.reviews.buyer = true;
+                    ctx.accounts.phys_transaction.metadata.reviews.buyer = true;
                 },
                 None => return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
             }
-            ctx.accounts.phys_transaction.reviews.buyer = true;
         }else
         {
             return err!(ReviewErrors::InvalidReviewAuthority)

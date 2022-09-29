@@ -125,11 +125,18 @@ pub struct UpdateProductField<'info>{
     pub phys_product: Account<'info, PhysicalProduct>,
 
     #[account(
-        has_one = master_pubkey
+        seeds = [
+            b"orbit_account",
+            wallet.key().as_ref()
+        ],
+        bump
     )]
     pub market_account: Account<'info, OrbitMarketAccount>,
 
-    pub master_pubkey: Signer<'info>,
+    #[account(
+        address = market_account.wallet
+    )]
+    pub wallet: Signer<'info>,
 }
 
 pub fn update_quantity_handler(ctx: Context<UpdateProductField>, qnt: u32) -> Result<()>{

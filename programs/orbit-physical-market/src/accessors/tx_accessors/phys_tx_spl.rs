@@ -56,16 +56,18 @@ pub struct OpenPhysicalTransactionSpl<'info>{
     )]
     pub escrow_account: Account<'info, TokenAccount>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [
+            b"orbit_account",
+            buyer_wallet.key().as_ref()
+        ],
+        bump
+    )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
     #[account(mut)]
     pub buyer_wallet: Signer<'info>,
-
-    #[account(
-        address = buyer_account.master_pubkey
-    )]
-    pub buyer_auth: Signer<'info>,
 
     pub system_program: Program<'info, System>,
 
@@ -123,11 +125,6 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub escrow_account: Account<'info, TokenAccount>,
 
     #[account(
-        constraint = (authority.key() == seller_account.master_pubkey) || (authority.key() == buyer_account.master_pubkey)
-    )] // enforce constraints. only certain people should be able to close
-    pub authority: Signer<'info>,
-
-    #[account(
         seeds = [b"market_authority"],
         bump
     )]
@@ -170,7 +167,12 @@ pub struct FundEscrowSpl<'info>{
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
-        address = phys_transaction.metadata.buyer
+        address = phys_transaction.metadata.buyer,
+        seeds = [
+            b"orbit_account",
+            buyer_wallet.key().as_ref()
+        ],
+        bump
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
@@ -187,15 +189,13 @@ pub struct FundEscrowSpl<'info>{
     pub escrow_account: Account<'info, TokenAccount>,
 
     #[account(
-        address = buyer_account.master_pubkey
+        address = buyer_account.wallet
     )]
-    pub buyer_auth: Signer<'info>,
+    pub buyer_wallet: Signer<'info>,
 
     #[account(
-        address = buyer_spl_wallet.owner
+        constraint = buyer_spl_wallet.owner == buyer_wallet.key()
     )]
-    pub wallet_owner: Signer<'info>,
-
     pub buyer_spl_wallet: Account<'info, TokenAccount>,
 
     pub token_program: Program<'info, Token>

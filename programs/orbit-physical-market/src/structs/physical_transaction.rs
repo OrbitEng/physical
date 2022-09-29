@@ -6,6 +6,4 @@ use transaction::transaction_struct::OrbitTransaction;
 pub struct PhysicalTransaction{
     pub metadata: OrbitTransaction, // 32 * 3 + 5?
     pub shipping: [u8; 64],
-
-    pub reviews: TransactionReviews
 }
