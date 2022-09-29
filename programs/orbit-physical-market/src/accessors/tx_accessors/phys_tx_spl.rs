@@ -62,7 +62,8 @@ pub struct OpenPhysicalTransactionSpl<'info>{
             b"orbit_account",
             buyer_wallet.key().as_ref()
         ],
-        bump
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
@@ -172,7 +173,8 @@ pub struct FundEscrowSpl<'info>{
             b"orbit_account",
             buyer_wallet.key().as_ref()
         ],
-        bump
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
@@ -226,6 +228,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
 
     // wallet has to own this :P
     #[account(
+        mut
         constraint = favor_token_account.owner == favor_market_account.wallet
     )]
     pub favor_token_account: Account<'info, TokenAccount>,

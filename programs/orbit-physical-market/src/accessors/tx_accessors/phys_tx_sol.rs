@@ -48,7 +48,8 @@ pub struct OpenPhysicalTransactionSol<'info>{
             b"orbit_account",
             buyer_wallet.key().as_ref()
         ],
-        bump
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
@@ -67,7 +68,13 @@ pub struct ClosePhysicalTransactionSol<'info>{
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.buyer
+        address = phys_transaction.metadata.buyer,
+        seeds = [
+            b"orbit_account",
+            buyer_wallet.key().as_ref()
+        ],
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
@@ -78,7 +85,13 @@ pub struct ClosePhysicalTransactionSol<'info>{
     pub buyer_wallet: SystemAccount<'info>,
 
     #[account(
-        address = phys_transaction.metadata.seller
+        address = phys_transaction.metadata.seller,
+        seeds = [
+            b"orbit_account",
+            seller_wallet.key().as_ref()
+        ],
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub seller_account: Account<'info, OrbitMarketAccount>,
 
@@ -144,7 +157,8 @@ pub struct FundEscrowSol<'info>{
             b"orbit_account",
             buyer_wallet.key().as_ref()
         ],
-        bump
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
@@ -186,11 +200,17 @@ pub struct ClosePhysicalDisputeSol<'info>{
         mut,
         address = favor_market_account.wallet
     )]
-    pub favor: SystemAccount<'info>,
+    pub favor_wallet: SystemAccount<'info>,
 
     #[account(
         mut,
-        address = phys_dispute.favor
+        address = phys_dispute.favor,
+        seeds = [
+            b"orbit_account",
+            favor_wallet.key().as_ref()
+        ],
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub favor_market_account: Box<Account<'info, OrbitMarketAccount>>,
 
@@ -240,5 +260,5 @@ pub struct ClosePhysicalDisputeSol<'info>{
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(mut)]
-    pub buyer_wallet: Signer<'info>,
+    pub buyer_wallet: SystemAccount<'info>,
 }

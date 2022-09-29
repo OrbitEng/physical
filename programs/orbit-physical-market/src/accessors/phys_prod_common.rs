@@ -129,7 +129,8 @@ pub struct UpdateProductField<'info>{
             b"orbit_account",
             wallet.key().as_ref()
         ],
-        bump
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub market_account: Account<'info, OrbitMarketAccount>,
 

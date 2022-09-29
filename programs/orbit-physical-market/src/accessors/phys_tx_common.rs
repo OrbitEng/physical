@@ -60,14 +60,20 @@ pub struct CloseTransactionAccount<'info>{
     #[account(
         constraint = 
             (market_account.key() == phys_transaction.metadata.buyer) ||
-            (market_account.key() == phys_transaction.metadata.seller)
+            (market_account.key() == phys_transaction.metadata.seller),
+        seeds = [
+            b"orbit_account",
+            wallet.key().as_ref()
+        ],
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub market_account: Account<'info, OrbitMarketAccount>,
 
     #[account(
-        address = market_account.master_pubkey
+        address = market_account.wallet
     )]
-    pub account_auth: Signer<'info>,
+    pub wallet: Signer<'info>,
 
     #[account(
         mut,
@@ -122,6 +128,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
     }
 
     fn close_sol(ctx: Context<'_, '_, '_, 'c, ClosePhysicalTransactionSol<'c>>) -> Result<()>{
+
         match ctx.bumps.get("escrow_account"){
             Some(escrow_seeds) => {
                 if ctx.accounts.phys_transaction.metadata.rate == 95{
@@ -325,18 +332,10 @@ pub struct OpenPhysicalDispute<'info>{
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
-        // opener must be buyer or seller
-        constraint = (opener.key() == phys_transaction.metadata.seller) || (opener.key() == phys_transaction.metadata.buyer),
-    )]
-    pub opener: Account<'info, OrbitMarketAccount>,
-
-    #[account(
-        address = opener.master_pubkey
+        mut,
+        constraint = (opener.key() == buyer.wallet) || (opener.key() == seller.wallet),
     )]
     pub opener_auth: Signer<'info>,
-
-    #[account(mut)]
-    pub payer: Signer<'info>,
 
     #[account(
         seeds = [b"market_authority"],
@@ -523,14 +522,20 @@ pub struct UpdateShipping<'info>{
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.seller
+        address = phys_transaction.metadata.seller,
+        seeds = [
+            b"orbit_account",
+            wallet.key().as_ref()
+        ],
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub seller_account: Account<'info, OrbitMarketAccount>,
 
     #[account(
-        address = seller_account.master_pubkey
+        address = seller_account.wallet
     )]
-    pub signer_auth: Signer<'info>,
+    pub wallet: Signer<'info>,
 }
 
 pub fn update_shipping(ctx: Context<UpdateShipping>, enc_shipping: [u8; 64]) -> Result<()>{
@@ -551,14 +556,20 @@ pub struct BuyerConfirm<'info>{
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.buyer
+        address = phys_transaction.metadata.buyer,
+        seeds = [
+            b"orbit_account",
+            wallet.key().as_ref()
+        ],
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
     #[account(
-        address = buyer_account.master_pubkey
+        address = buyer_account.wallet
     )]
-    pub signer_auth: Signer<'info>,
+    pub wallet: Signer<'info>,
 }
 
 pub fn confirm_delivery(ctx: Context<BuyerConfirm>) -> Result<()>{
@@ -597,7 +608,8 @@ pub struct LeaveReview<'info>{
             b"orbit_account",
             wallet.key().as_ref()
         ],
-        bump
+        bump,
+        seeds::program = market_accounts::ID
     )]
     pub reviewer: Account<'info, OrbitMarketAccount>,
 
