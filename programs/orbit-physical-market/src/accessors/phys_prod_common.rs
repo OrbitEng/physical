@@ -18,7 +18,6 @@ use product::{
 };
 use market_accounts::structs::market_account::OrbitMarketAccount;
 
-
 //////////////////////////////////////////////////////////////////////////////
 /// DEFAULT PRODUCT TRAIT
 
@@ -89,6 +88,7 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
             return err!(PhysicalMarketErrors::InvalidSellerForListing)
         }
         ctx.accounts.new_product.metadata = prod;
+        ctx.accounts.new_product.quantity = 0;
 
         match ctx.bumps.get("market_auth"){
             Some(auth_bump) => edit_mod_catalog(
