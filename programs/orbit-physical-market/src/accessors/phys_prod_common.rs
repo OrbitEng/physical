@@ -2,6 +2,7 @@ use anchor_lang::{
     prelude::*,
     AccountsClose
 };
+
 use orbit_catalog::{
     catalog_struct::OrbitModCatalogStruct,
     cpi::{
@@ -12,7 +13,8 @@ use orbit_catalog::{
 use crate::{structs::physical_product::PhysicalProduct, errors::PhysicalMarketErrors, program::OrbitPhysicalMarket};
 use product::{
     product_trait::OrbitProductTrait,
-    product_struct::OrbitProduct
+    product_struct::OrbitProduct,
+    CommonProdUtils
 };
 use market_accounts::structs::market_account::OrbitMarketAccount;
 
@@ -116,7 +118,7 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
 //////////////////////////////////////////////////////////////////////////////
 /// PHYSICAL PRODUCT SPECIFIC FUNCTIONALITIES
 
-#[derive(Accounts)]
+#[derive(Accounts, CommonProdUtils)]
 pub struct UpdateProductField<'info>{
     #[account(
         mut,
@@ -145,27 +147,5 @@ pub fn update_quantity_handler(ctx: Context<UpdateProductField>, qnt: u32) -> Re
     if qnt == 0{
         ctx.accounts.phys_product.metadata.available = false;
     }
-    Ok(())
-}
-
-/// GENERAL
-
-pub fn update_price_handler(ctx: Context<UpdateProductField>, price: u64) -> Result<()>{
-    ctx.accounts.phys_product.metadata.price = price;
-    Ok(())
-}
-
-pub fn update_currency_handler(ctx: Context<UpdateProductField>, currency: Pubkey) -> Result<()>{
-    ctx.accounts.phys_product.metadata.currency = currency;
-    Ok(())
-}
-
-pub fn update_media_handler(ctx: Context<UpdateProductField>, link: String) -> Result<()>{
-    ctx.accounts.phys_product.metadata.media = link;
-    Ok(())
-}
-
-pub fn update_info_handler(ctx: Context<UpdateProductField>, info: String) -> Result<()>{
-    ctx.accounts.phys_product.metadata.info = info;
     Ok(())
 }

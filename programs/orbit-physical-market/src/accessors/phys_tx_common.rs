@@ -36,7 +36,7 @@ use crate::{
 
     id, program::OrbitPhysicalMarket
 };
-use dispute::{
+use orbit_dispute::{
     structs::dispute_trait::OrbitDisputableTrait,
     program::Dispute,
     cpi::accounts::{
@@ -317,7 +317,7 @@ pub struct OpenPhysicalDispute<'info>{
             b"dispute_account",
             phys_transaction.key().as_ref()
         ],
-        seeds::program = dispute::ID,
+        seeds::program = orbit_dispute::ID,
         bump
     )]
     pub new_dispute: SystemAccount<'info>,
@@ -365,7 +365,7 @@ pub struct OpenPhysicalDispute<'info>{
 }
 
 pub fn close_dispute_helper<'a>(dispute_program: AccountInfo<'a>, dispute_struct: AccountInfo<'a>, funder: AccountInfo<'a>, program_auth: AccountInfo<'a>, program: AccountInfo<'a>, seeds: &[&[&[u8]]]) -> Result<()>{
-    dispute::cpi::close_dispute(
+    orbit_dispute::cpi::close_dispute(
         CpiContext::new_with_signer(
             dispute_program,
             CloseDispute{
@@ -388,7 +388,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Frozen;
 
         let res: Result<()> = match ctx.bumps.get("physical_auth"){
-            Some(signer_bump) => dispute::cpi::open_dispute(
+            Some(signer_bump) => orbit_dispute::cpi::open_dispute(
                 CpiContext::new_with_signer(
                     ctx.accounts.dispute_program.to_account_info(),
                     OpenDispute{
@@ -578,8 +578,6 @@ pub fn confirm_product(ctx: Context<BuyerConfirm>) -> Result<()>{
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 /// ACCOUNT HELPERS (leave a review)
-
-/// CHECK: the transaction cant be closed as it holds important metadata
 
 #[derive(Accounts)]
 pub struct LeaveReview<'info>{

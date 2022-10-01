@@ -3,7 +3,7 @@ use market_accounts::{
     OrbitMarketAccount,
     program::OrbitMarketAccounts
 };
-use dispute::{
+use orbit_dispute::{
     program::Dispute,
     DisputeState,
     OrbitDispute

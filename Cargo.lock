@@ -536,17 +536,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dispute"
-version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#6766c70e7bdd9fdec35b21493f29a0a2675cc089"
-dependencies = [
- "anchor-lang",
- "market-accounts",
- "orbit-addresses",
- "transaction",
-]
-
-[[package]]
 name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -776,15 +765,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "market-macros"
-version = "0.1.0"
-source = "git+https://github.com/OrbitEng/market-macros#ba61fb5f4dbcd88e65497b5bfebca003ba4bb409"
-dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -890,6 +870,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "orbit-derive-product"
+version = "0.1.0"
+source = "git+https://github.com/OrbitEng/product#bde9ed6b91713b0c52add722fa78bd9b40b8d72b"
+dependencies = [
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "orbit-dispute"
+version = "0.1.0"
+source = "git+https://github.com/OrbitEng/dispute#f2f4f439de26cda83a792ad367f4cc88ec9f2e3a"
+dependencies = [
+ "anchor-lang",
+ "market-accounts",
+ "orbit-addresses",
+ "transaction",
+]
+
+[[package]]
 name = "orbit-multisig"
 version = "0.9.0"
 source = "git+https://github.com/OrbitEng/multisig#7b26841133b0330bef94ab46344f18a1123e7b9b"
@@ -903,11 +903,10 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "dispute",
  "market-accounts",
- "market-macros",
  "orbit-addresses",
  "orbit-catalog",
+ "orbit-dispute",
  "orbit-multisig",
  "product",
  "transaction",
@@ -987,9 +986,10 @@ dependencies = [
 [[package]]
 name = "product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#0728eaae59c08fba3d22323b9f2f857ac591b6fa"
+source = "git+https://github.com/OrbitEng/product#bde9ed6b91713b0c52add722fa78bd9b40b8d72b"
 dependencies = [
  "anchor-lang",
+ "orbit-derive-product",
 ]
 
 [[package]]
@@ -1394,7 +1394,7 @@ dependencies = [
 [[package]]
 name = "transaction"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/transaction#b27a848b76eb0c60a314c76a9455afc823b9c608"
+source = "git+https://github.com/OrbitEng/transaction#561f8a330baca9eebaab02a04500760a1f06108b"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
