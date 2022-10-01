@@ -228,7 +228,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
 
     // wallet has to own this :P
     #[account(
-        mut
+        mut,
         constraint = favor_token_account.owner == favor_market_account.wallet
     )]
     pub favor_token_account: Account<'info, TokenAccount>,

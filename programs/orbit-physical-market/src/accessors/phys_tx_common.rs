@@ -293,7 +293,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
                 anchor_spl::token::Transfer{
                     from: ctx.accounts.buyer_spl_wallet.to_account_info(),
                     to: ctx.accounts.escrow_account.to_account_info(),
-                    authority: ctx.accounts.wallet_owner.to_account_info()
+                    authority: ctx.accounts.buyer_wallet.to_account_info()
                 }
             ),
             ctx.accounts.phys_transaction.metadata.transaction_price
@@ -333,9 +333,9 @@ pub struct OpenPhysicalDispute<'info>{
 
     #[account(
         mut,
-        constraint = (opener.key() == buyer.wallet) || (opener.key() == seller.wallet),
+        constraint = (opener_wallet.key() == buyer.wallet) || (opener_wallet.key() == seller.wallet),
     )]
-    pub opener_auth: Signer<'info>,
+    pub opener_wallet: Signer<'info>,
 
     #[account(
         seeds = [b"market_authority"],
@@ -398,7 +398,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                         caller_program: ctx.accounts.physical_program.to_account_info(),
                         buyer: ctx.accounts.buyer.to_account_info(),
                         seller: ctx.accounts.seller.to_account_info(),
-                        payer: ctx.accounts.payer.to_account_info(),
+                        payer: ctx.accounts.opener_wallet.to_account_info(),
                         system_program: ctx.accounts.system_program.to_account_info()
                     },
                     &[&[b"physical_auth", &[*signer_bump]]]
@@ -413,9 +413,6 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     }
     
     fn close_dispute_sol(ctx: Context<ClosePhysicalDisputeSol>) -> Result<()>{
-        if !(ctx.accounts.buyer_account.to_account_info().is_signer || ctx.accounts.seller_account.to_account_info().is_signer){
-            return err!(PhysicalMarketErrors::InvalidTransactionInvoker)
-        };
 
         match ctx.bumps.get("escrow_account"){
             Some(escrow_bump) => {
@@ -430,7 +427,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                 }
                 close_escrow_sol_rate(
                     ctx.accounts.escrow_account.to_account_info(),
-                    ctx.accounts.favor.to_account_info(),
+                    ctx.accounts.favor_wallet.to_account_info(),
                     &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
                     100
                 )
@@ -460,9 +457,6 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     }
 
     fn close_dispute_spl(ctx: Context<ClosePhysicalDisputeSpl>) -> Result<()>{
-        if !(ctx.accounts.buyer_account.to_account_info().is_signer || ctx.accounts.seller_account.to_account_info().is_signer){
-            return err!(PhysicalMarketErrors::InvalidTransactionInvoker)
-        };
 
         match ctx.bumps.get("physical_auth"){
             Some(auth_bump) => {
@@ -639,7 +633,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
             return err!(ReviewErrors::InvalidReviewAuthority)
         };
 
-        if ctx.accounts.phys_transaction.metadata.seller == ctx.accounts.reviewer.key() && !ctx.accounts.phys_transaction.reviews.seller{
+        if ctx.accounts.phys_transaction.metadata.seller == ctx.accounts.reviewer.key() && !ctx.accounts.phys_transaction.metadata.reviews.seller{
             match ctx.bumps.get("phys_auth"){
                 Some(auth_bump) => {
                     submit_rating_with_signer(
@@ -655,7 +649,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                 None => return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
             }
         }else
-        if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.key()  && !ctx.accounts.phys_transaction.reviews.buyer{
+        if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.key()  && !ctx.accounts.phys_transaction.metadata.reviews.buyer{
             match ctx.bumps.get("phys_auth"){
                 Some(auth_bump) => {
                     submit_rating_with_signer(
