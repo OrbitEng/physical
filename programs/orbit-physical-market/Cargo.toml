@@ -25,3 +25,4 @@ dispute = {git = "https://github.com/OrbitEng/dispute", features = ["cpi"]}
 orbit-catalog = {git = "https://github.com/OrbitEng/catalog", features = ["cpi"]}
 orbit-multisig = {git = "https://github.com/OrbitEng/multisig", features=["no-entrypoint"]}
 orbit-addresses = {git = "https://github.com/OrbitEng/addresses"}
+market-macros = {git = "https://github.com/OrbitEng/market-macros"}
