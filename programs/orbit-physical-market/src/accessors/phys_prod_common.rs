@@ -22,9 +22,6 @@ use market_accounts::structs::market_account::OrbitMarketAccount;
 //////////////////////////////////////////////////////////////////////////////
 /// DEFAULT PRODUCT TRAIT
 
-
-// todo:
-//      add to catalog
 #[derive(Accounts)]
 pub struct ListPhysicalProduct<'info>{
 
