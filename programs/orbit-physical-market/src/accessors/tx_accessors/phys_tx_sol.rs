@@ -25,26 +25,26 @@ pub struct OpenPhysicalTransactionSol<'info>{
     #[account(
         init,
         payer = buyer_wallet,
-        space = 1000
+        space = 400
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub phys_transaction:Box< Account<'info, PhysicalTransaction>>,
 
     #[account(
         mut,
         constraint = phys_product.metadata.currency == System::id(),
         constraint = phys_product.quantity > 0
     )]
-    pub phys_product: Account<'info, PhysicalProduct>,
+    pub phys_product:Box<Account<'info, PhysicalProduct>>,
 
     #[account(
         constraint = seller_account.wallet == seller_catalog.catalog_owner
     )]
-    pub seller_account: Account<'info, OrbitMarketAccount>,
+    pub seller_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         address = phys_product.metadata.owner_catalog
     )]
-    pub seller_catalog: Account<'info, OrbitVendorCatalog>,
+    pub seller_catalog:Box<Account<'info, OrbitVendorCatalog>>,
 
     #[account(
         seeds = [
@@ -64,7 +64,7 @@ pub struct OpenPhysicalTransactionSol<'info>{
         bump,
         seeds::program = market_accounts::ID
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(mut)]
     pub buyer_wallet: Signer<'info>,
@@ -78,7 +78,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
         mut,
         constraint = phys_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction:Box< Account<'info, PhysicalTransaction>>,
 
     #[account(
         address = phys_transaction.metadata.buyer,
@@ -89,7 +89,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
         bump,
         seeds::program = market_accounts::ID
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
@@ -106,7 +106,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
         bump,
         seeds::program = market_accounts::ID
     )]
-    pub seller_account: Account<'info, OrbitMarketAccount>,
+    pub seller_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
@@ -162,7 +162,7 @@ pub struct FundEscrowSol<'info>{
         constraint = phys_transaction.metadata.transaction_state == TransactionState::SellerConfirmed,
         constraint = phys_transaction.metadata.escrow_account == escrow_account.key()
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub phys_transaction:Box< Account<'info, PhysicalTransaction>>,
 
     #[account(
         address = phys_transaction.metadata.buyer,
@@ -173,7 +173,7 @@ pub struct FundEscrowSol<'info>{
         bump,
         seeds::program = market_accounts::ID
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,

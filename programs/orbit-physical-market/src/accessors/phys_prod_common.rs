@@ -36,7 +36,7 @@ pub struct ListPhysicalProduct<'info>{
         payer = seller_wallet,
 
         seeds = [
-            b"commission_product",
+            b"physical_product",
             vendor_catalog.key().as_ref(),
             &[prod_in.index]
         ],
@@ -47,7 +47,7 @@ pub struct ListPhysicalProduct<'info>{
     #[account(
         address = phys_product.metadata.owner_catalog
     )]
-    pub vendor_catalog: Account<'info, OrbitVendorCatalog>,
+    pub vendor_catalog:Box<Account<'info, OrbitVendorCatalog>>,
 
     #[account(
         mut,
@@ -64,7 +64,7 @@ pub struct ListPhysicalProduct<'info>{
         ],
         bump
     )]
-    pub recent_catalog: Account<'info, OrbitModCatalogStruct>,
+    pub recent_catalog: Box<Account<'info, OrbitModCatalogStruct>>,
 
     #[account(
         seeds = [
@@ -87,7 +87,7 @@ pub struct UnlistPhysicalProduct<'info>{
     #[account(
         address = phys_product.metadata.owner_catalog
     )]
-    pub vendor_catalog: Account<'info, OrbitVendorCatalog>,
+    pub vendor_catalog:Box<Account<'info, OrbitVendorCatalog>>,
 
     #[account(
         mut,
@@ -154,12 +154,12 @@ impl<'a, 'b> OrbitProductTrait<'a, 'b, ListPhysicalProduct<'a>, UnlistPhysicalPr
 #[derive(Accounts, CommonProdUtils)]
 pub struct UpdateProductField<'info>{
     #[account(mut)]
-    pub phys_product: Account<'info, PhysicalProduct>,
+    pub phys_product:Box<Account<'info, PhysicalProduct>>,
 
     #[account(
         address = phys_product.metadata.owner_catalog
     )]
-    pub vendor_catalog: Account<'info, OrbitVendorCatalog>,
+    pub vendor_catalog:Box<Account<'info, OrbitVendorCatalog>>,
 
     #[account(
         mut,

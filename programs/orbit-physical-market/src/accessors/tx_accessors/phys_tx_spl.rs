@@ -39,17 +39,17 @@ pub struct OpenPhysicalTransactionSpl<'info>{
         constraint = phys_product.metadata.currency != System::id(),
         constraint = phys_product.quantity > 0
     )]
-    pub phys_product: Account<'info, PhysicalProduct>,
+    pub phys_product:Box<Account<'info, PhysicalProduct>>,
 
     #[account(
         constraint = seller_account.wallet == seller_catalog.catalog_owner
     )]
-    pub seller_account: Account<'info, OrbitMarketAccount>,
+    pub seller_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         address = phys_product.metadata.owner_catalog
     )]
-    pub seller_catalog: Account<'info, OrbitVendorCatalog>,
+    pub seller_catalog:Box<Account<'info, OrbitVendorCatalog>>,
 
     #[account(
         address = phys_product.metadata.currency
@@ -78,7 +78,7 @@ pub struct OpenPhysicalTransactionSpl<'info>{
         bump,
         seeds::program = market_accounts::ID
     )]
-    pub buyer_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(mut)]
     pub buyer_wallet: Signer<'info>,

@@ -758,7 +758,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#ec0d07ba6b7b8b306da5c2f636edce04dcb648b5"
+source = "git+https://github.com/OrbitEng/accounts#74e2c6f453c2f7c00d1240abad65e31bdbc67e47"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -862,7 +862,7 @@ dependencies = [
 [[package]]
 name = "orbit-catalog"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/catalog#0d2f7d1bdf2cf468ee19fb1325d571a7388baccf"
+source = "git+https://github.com/OrbitEng/catalog#3e9b1435891f7ebfd7449cbf50a98af6eb2257b3"
 dependencies = [
  "anchor-lang",
  "market-accounts",
@@ -881,7 +881,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#f2f4f439de26cda83a792ad367f4cc88ec9f2e3a"
+source = "git+https://github.com/OrbitEng/dispute#63260ea6d9ff99ec2b435e06d70e296e5c29d47f"
 dependencies = [
  "anchor-lang",
  "market-accounts",
