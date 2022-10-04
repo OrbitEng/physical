@@ -104,7 +104,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         }
 
         ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
-        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.phys_product.metadata.seller.key();
+        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_account.key();
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
@@ -113,6 +113,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         ctx.accounts.phys_transaction.metadata.funded = false;
 
         ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
+        ctx.accounts.phys_product.quantity -= 1;
         Ok(())
     }
 
@@ -126,7 +127,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         }
         
         ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
-        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.phys_product.metadata.seller.key();
+        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_account.key();
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
@@ -135,6 +136,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
         ctx.accounts.phys_transaction.metadata.funded = false;
 
         ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
+        ctx.accounts.phys_product.quantity -= 1;
         Ok(())
     }
 

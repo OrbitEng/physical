@@ -3,6 +3,7 @@ use market_accounts::{
     OrbitMarketAccount,
     program::OrbitMarketAccounts
 };
+use orbit_catalog::OrbitVendorCatalog;
 use orbit_dispute::{
     program::Dispute,
     DisputeState,
@@ -34,9 +35,21 @@ pub struct OpenPhysicalTransactionSpl<'info>{
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
-        constraint = phys_product.metadata.currency != System::id()
+        mut,
+        constraint = phys_product.metadata.currency != System::id(),
+        constraint = phys_product.quantity > 0
     )]
     pub phys_product: Account<'info, PhysicalProduct>,
+
+    #[account(
+        constraint = seller_account.wallet == seller_catalog.catalog_owner
+    )]
+    pub seller_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        address = phys_product.metadata.owner_catalog
+    )]
+    pub seller_catalog: Account<'info, OrbitVendorCatalog>,
 
     #[account(
         address = phys_product.metadata.currency
