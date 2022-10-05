@@ -59,8 +59,8 @@ pub struct CloseTransactionAccount<'info>{
 
     #[account(
         constraint = 
-            (market_account.key() == phys_transaction.metadata.buyer) ||
-            (market_account.key() == phys_transaction.metadata.seller),
+            (market_account.voter_id == phys_transaction.metadata.buyer) ||
+            (market_account.voter_id == phys_transaction.metadata.seller),
         seeds = [
             b"orbit_account",
             wallet.key().as_ref()
@@ -76,7 +76,7 @@ pub struct CloseTransactionAccount<'info>{
     pub wallet: Signer<'info>,
 
     #[account(
-        address = phys_transaction.metadata.buyer,
+        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer,
         seeds = [
             b"orbit_account",
             buyer_wallet.key().as_ref()
@@ -103,8 +103,8 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
             ctx.accounts.phys_transaction.metadata.rate = 95
         }
 
-        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
-        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_account.key();
+        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.voter_id;
+        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_account.voter_id;
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
@@ -126,8 +126,8 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
             ctx.accounts.phys_transaction.metadata.rate = 95
         }
         
-        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.key();
-        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_account.key();
+        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_account.voter_id;
+        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_account.voter_id;
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
@@ -359,12 +359,12 @@ pub struct OpenPhysicalDispute<'info>{
     pub dispute_program: Program<'info, Dispute>,
 
     #[account(
-        address = phys_transaction.metadata.buyer
+        constraint = buyer.voter_id == phys_transaction.metadata.buyer
     )]
     pub buyer:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
-        address = phys_transaction.metadata.seller
+        constraint = seller.voter_id == phys_transaction.metadata.seller
     )]
     pub seller:Box<Account<'info, OrbitMarketAccount>>,
 
@@ -448,7 +448,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             None => return err!(PhysicalMarketErrors::InvalidEscrowBump)
         }.expect("something went wrong");
 
-        if ctx.accounts.phys_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.key() == ctx.accounts.phys_transaction.metadata.buyer {
+        if ctx.accounts.phys_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.voter_id == ctx.accounts.phys_transaction.metadata.buyer {
             ctx.accounts.favor_market_account.dispute_discounts += 1;
         }
 
@@ -495,7 +495,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             None => return err!(PhysicalMarketErrors::InvalidEscrowBump)
         }.expect("something went wrong");
 
-        if ctx.accounts.phys_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.key() == ctx.accounts.phys_transaction.metadata.buyer {
+        if ctx.accounts.phys_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.voter_id == ctx.accounts.phys_transaction.metadata.buyer {
             ctx.accounts.favor_market_account.dispute_discounts += 1;
         }
 
@@ -529,7 +529,7 @@ pub struct UpdateShipping<'info>{
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.seller,
+        constraint = seller_account.voter_id == phys_transaction.metadata.seller,
         seeds = [
             b"orbit_account",
             wallet.key().as_ref()
@@ -563,7 +563,7 @@ pub struct BuyerConfirm<'info>{
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.buyer,
+        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer,
         seeds = [
             b"orbit_account",
             wallet.key().as_ref()
@@ -600,15 +600,15 @@ pub struct LeaveReview<'info>{
     #[account(
         mut,
         constraint = 
-        (reviewer.key() == phys_transaction.metadata.seller) ||
-        (reviewer.key() == phys_transaction.metadata.buyer)
+        (reviewer.voter_id == phys_transaction.metadata.seller) ||
+        (reviewer.voter_id == phys_transaction.metadata.buyer)
     )]
     pub reviewed_account:Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         constraint = 
-        (reviewer.key() == phys_transaction.metadata.seller) ||
-        (reviewer.key() == phys_transaction.metadata.buyer),
+        (reviewer.voter_id == phys_transaction.metadata.seller) ||
+        (reviewer.voter_id == phys_transaction.metadata.buyer),
         seeds = [
             b"orbit_account",
             wallet.key().as_ref()
@@ -644,7 +644,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
             return err!(ReviewErrors::InvalidReviewAuthority)
         };
 
-        if ctx.accounts.phys_transaction.metadata.seller == ctx.accounts.reviewer.key() && !ctx.accounts.phys_transaction.metadata.reviews.seller{
+        if ctx.accounts.phys_transaction.metadata.seller == ctx.accounts.reviewer.voter_id && !ctx.accounts.phys_transaction.metadata.reviews.seller{
             match ctx.bumps.get("phys_auth"){
                 Some(auth_bump) => {
                     submit_rating_with_signer(
@@ -660,7 +660,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                 None => return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
             }
         }else
-        if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.key()  && !ctx.accounts.phys_transaction.metadata.reviews.buyer{
+        if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.voter_id  && !ctx.accounts.phys_transaction.metadata.reviews.buyer{
             match ctx.bumps.get("phys_auth"){
                 Some(auth_bump) => {
                     submit_rating_with_signer(

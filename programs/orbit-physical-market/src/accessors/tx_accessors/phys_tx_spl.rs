@@ -105,7 +105,7 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
-        address = phys_transaction.metadata.buyer
+        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 
@@ -116,7 +116,7 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub buyer_token_account: Account<'info, TokenAccount>,
 
     #[account(
-        address = phys_transaction.metadata.seller
+        constraint = seller_account.voter_id == phys_transaction.metadata.seller
     )]
     pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
 
@@ -181,7 +181,7 @@ pub struct FundEscrowSpl<'info>{
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
-        address = phys_transaction.metadata.buyer,
+        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer,
         seeds = [
             b"orbit_account",
             buyer_wallet.key().as_ref()
@@ -225,7 +225,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
     #[account(
         mut,
         constraint = phys_transaction.metadata.transaction_state == TransactionState::Frozen,
-        constraint = (phys_transaction.metadata.seller == favor_market_account.key()) || (phys_transaction.metadata.buyer == favor_market_account.key()),
+        constraint = (phys_transaction.metadata.seller == favor_market_account.voter_id) || (phys_transaction.metadata.buyer == favor_market_account.voter_id),
         constraint = phys_transaction.metadata.escrow_account == escrow_account.key()
     )]
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
@@ -248,7 +248,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
 
     #[account(
         mut,
-        address = phys_dispute.favor
+        constraint = favor_market_account.voter_id == phys_dispute.favor
     )]
     pub favor_market_account: Box<Account<'info, OrbitMarketAccount>>,
 
