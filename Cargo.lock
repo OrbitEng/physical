@@ -854,7 +854,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#31cb79c9b4061e29c34d97ce6d4de563635dc548"
+source = "git+https://github.com/OrbitEng/addresses#a8e5f9b6b2b0906c1db7aec74dbc065aec77306a"
 dependencies = [
  "anchor-lang",
 ]
@@ -881,7 +881,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#3c260c7314c09e28dd30c4a5936ea5f5b618feab"
+source = "git+https://github.com/OrbitEng/dispute#2c61e2b35074c21ff47e0f31e71710017e7f5493"
 dependencies = [
  "anchor-lang",
  "market-accounts",

@@ -34,8 +34,8 @@ pub struct CreatePhysRecentCatalog<'info>{
 }
 
 pub fn recent_phys_catalog_handler(ctx: Context<CreatePhysRecentCatalog>) -> Result<()>{
-    match ctx.bumps.get("market_auth"){
-        Some(auth_bump) => init_market_catalog(
+    if let Some(catalog_bump) = ctx.bumps.get("catalog"){
+        init_market_catalog(
             CpiContext::new_with_signer(
                 ctx.accounts.catalog_program.to_account_info(),
                 CreateMarketCatalog {
@@ -45,10 +45,11 @@ pub fn recent_phys_catalog_handler(ctx: Context<CreatePhysRecentCatalog>) -> Res
                     payer: ctx.accounts.payer.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info()
                 },
-                &[&[b"market_auth", &[*auth_bump]]]
+                &[&[b"recent_catalog", &[*catalog_bump]]]
             )
-        ),
-        None => err!(PhysicalMarketErrors::InvalidAuthBump)
+        )
+    }else{
+        return err!(PhysicalMarketErrors::InvalidAuthBump)
     }
     
 }
