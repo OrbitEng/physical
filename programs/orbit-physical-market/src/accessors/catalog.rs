@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use crate::errors::PhysicalMarketErrors;
+use crate::{errors::PhysicalMarketErrors, program::OrbitPhysicalMarket};
 use orbit_catalog::{cpi::{
     accounts::CreateMarketCatalog,
     init_market_catalog
@@ -14,6 +14,8 @@ pub struct CreatePhysRecentCatalog<'info>{
         bump
     )]
     pub catalog: SystemAccount<'info>,
+
+    pub self_program: Program<'info, OrbitPhysicalMarket>,
 
     #[account(
         seeds = [
@@ -38,6 +40,8 @@ pub fn recent_phys_catalog_handler(ctx: Context<CreatePhysRecentCatalog>) -> Res
                 ctx.accounts.catalog_program.to_account_info(),
                 CreateMarketCatalog {
                     catalog: ctx.accounts.catalog.to_account_info(),
+                    market_auth: ctx.accounts.market_auth.to_account_info(),
+                    invoker: ctx.accounts.self_program.to_account_info(),
                     payer: ctx.accounts.payer.to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info()
                 },
