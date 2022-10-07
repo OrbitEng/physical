@@ -13,7 +13,6 @@ use orbit_multisig::Multisig;
 use transaction::transaction_struct::TransactionState;
 use crate::{
     PhysicalTransaction,
-    PhysicalProduct,
     program::OrbitPhysicalMarket
 };
 
@@ -81,7 +80,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
     pub phys_transaction:Box< Account<'info, PhysicalTransaction>>,
 
     #[account(
-        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer,
+        constraint = buyer_account.key() == phys_transaction.metadata.buyer,
         seeds = [
             b"orbit_account",
             buyer_wallet.key().as_ref()
@@ -98,7 +97,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
     pub buyer_wallet: SystemAccount<'info>,
 
     #[account(
-        constraint = seller_account.voter_id == phys_transaction.metadata.seller,
+        constraint = seller_account.key() == phys_transaction.metadata.seller,
         seeds = [
             b"orbit_account",
             seller_wallet.key().as_ref()
@@ -165,7 +164,7 @@ pub struct FundEscrowSol<'info>{
     pub phys_transaction:Box< Account<'info, PhysicalTransaction>>,
 
     #[account(
-        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer,
+        constraint = buyer_account.key() == phys_transaction.metadata.buyer,
         seeds = [
             b"orbit_account",
             buyer_wallet.key().as_ref()
@@ -197,7 +196,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     #[account(
         mut,
         constraint = phys_transaction.metadata.transaction_state == TransactionState::Frozen,
-        constraint = (phys_transaction.metadata.seller == favor_market_account.voter_id) || (phys_transaction.metadata.buyer == favor_market_account.voter_id),
+        constraint = (phys_transaction.metadata.seller == favor_market_account.key()) || (phys_transaction.metadata.buyer == favor_market_account.key()),
     )]
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 
@@ -269,7 +268,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     pub multisig_wallet: SystemAccount<'info>,
     
     #[account(
-        constraint = buyer_account.voter_id == phys_transaction.metadata.buyer
+        constraint = buyer_account.key() == phys_transaction.metadata.buyer
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
 

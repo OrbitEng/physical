@@ -1,6 +1,3 @@
-pub mod phys_prod_common;
-pub use phys_prod_common::*;
-
 pub mod catalog;
 pub use catalog::*;
 

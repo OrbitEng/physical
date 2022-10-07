@@ -25,37 +25,6 @@ pub mod orbit_physical_market {
     pub fn init_recent_catalog(ctx: Context<CreatePhysRecentCatalog>) -> Result<()>{
         recent_phys_catalog_handler(ctx)
     }
-    
-    ///////////////////////////////////////////////////
-    /// PRODUCT HANDLERS
-
-    pub fn list_product(ctx: Context<ListPhysicalProduct>, prod: OrbitProduct) -> Result<()> {
-        PhysicalProduct::list(ctx, prod)
-    }
-
-    pub fn unlist_product(ctx: Context<UnlistPhysicalProduct>) -> Result<()> {
-        PhysicalProduct::unlist(ctx)
-    }
-
-
-    /// MODIFIERS
-    pub fn update_product_quantity(ctx: Context<UpdateProductField>, qnt: u32) -> Result<()>{
-        update_quantity_handler(ctx, qnt)
-    }
-
-    // general (generated)
-    pub fn update_product_price(ctx: Context<UpdateProductField>, price: u64) -> Result<()>{
-        update_price_handler(ctx, price)
-    }
-    pub fn update_currency(ctx: Context<UpdateProductField>, currency: Pubkey) -> Result<()>{
-        update_currency_handler(ctx, currency)
-    }
-    pub fn set_media(ctx: Context<UpdateProductField>, link: String) -> Result<()>{
-        update_media_handler(ctx, link)
-    }
-    pub fn set_prod_info(ctx: Context<UpdateProductField>, info: String) -> Result<()>{
-        update_info_handler(ctx, info)
-    }
 
     //////////////////////////////////////////////
     /// TRANSACTION HANDLERS
