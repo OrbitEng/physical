@@ -10,7 +10,8 @@ use orbit_dispute::{
     OrbitDispute
 };
 use orbit_multisig::Multisig;
-use transaction::transaction_struct::TransactionState;
+use orbit_transaction::transaction_struct::TransactionState;
+use orbit_product::PhysicalProduct;
 use crate::{
     PhysicalTransaction,
     program::OrbitPhysicalMarket

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use transaction::transaction_struct::OrbitTransaction;
+use orbit_transaction::transaction_struct::OrbitTransaction;
 
 #[account]
 pub struct PhysicalTransaction{

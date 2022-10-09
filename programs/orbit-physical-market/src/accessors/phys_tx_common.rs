@@ -1,3 +1,5 @@
+use std::f32::consts::E;
+
 use anchor_lang::{
     prelude::*,
     AccountsClose,
@@ -14,8 +16,8 @@ use market_accounts::{
     program::OrbitMarketAccounts,
     MarketAccountErrors
 };
-use transaction::{
-    transaction_errors::ReviewErrors,
+use orbit_transaction::{
+    errors::ReviewErrors,
     transaction_struct::TransactionState,
     transaction_trait::OrbitTransactionTrait,
     transaction_utils::*
@@ -141,66 +143,65 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, '
     }
 
     fn close_sol(ctx: Context<'_, '_, '_, 'c, ClosePhysicalTransactionSol<'c>>) -> Result<()>{
-
-        match ctx.bumps.get("escrow_account"){
-            Some(escrow_seeds) => {
-                if ctx.accounts.phys_transaction.metadata.rate == 95{
-                    let bal = ctx.accounts.escrow_account.lamports();
-                    let mut residual_amt = bal * 5/100;
-                    if  (ctx.accounts.buyer_account.reflink != Pubkey::new(&[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])) &&
-                        (ctx.remaining_accounts[0].key() == ctx.accounts.buyer_account.reflink)
-                    {
-                        let reflink_amt = bal * 25 / 10000;
-                        residual_amt = bal * 45/1000;
-                        close_escrow_sol_flat(
-                            ctx.accounts.escrow_account.to_account_info(),
-                            ctx.accounts.buyer_wallet.to_account_info(),
-                            &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                            reflink_amt
-                        ).expect("couldnt close escrow");
-                        
-                        match remaining_accounts_to_wallet(ctx.remaining_accounts){
-                            Ok(reflink_wallet) => {
-                                close_escrow_sol_flat(
-                                    ctx.accounts.escrow_account.to_account_info(),
-                                    reflink_wallet.to_account_info(),
-                                    &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                                    reflink_amt
-                                ).expect("couldnt close escrow");
-                                reflink_wallet.exit(ctx.program_id)?;
-                            },
-                            Err(e) => return Err(e)
-                        }
-                    }
+        if let Some(escrow_seeds) = ctx.bumps.get("escrow_account"){
+            if ctx.accounts.phys_transaction.metadata.rate == 95{
+                let bal = ctx.accounts.escrow_account.lamports();
+                let mut residual_amt = bal * 5/100;
+                if  (ctx.accounts.buyer_account.reflink != Pubkey::new(&[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])) &&
+                    (ctx.remaining_accounts[0].key() == ctx.accounts.buyer_account.reflink)
+                {
+                    let reflink_amt = bal * 25 / 10000;
+                    residual_amt = bal * 45/1000;
                     close_escrow_sol_flat(
                         ctx.accounts.escrow_account.to_account_info(),
-                        ctx.accounts.multisig_wallet.to_account_info(),
+                        ctx.accounts.buyer_wallet.to_account_info(),
                         &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                        residual_amt
+                        reflink_amt
                     ).expect("couldnt close escrow");
+                    
+                    match remaining_accounts_to_wallet(ctx.remaining_accounts){
+                        Ok(reflink_wallet) => {
+                            close_escrow_sol_flat(
+                                ctx.accounts.escrow_account.to_account_info(),
+                                reflink_wallet.to_account_info(),
+                                &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                                reflink_amt
+                            ).expect("couldnt close escrow");
+                            reflink_wallet.exit(ctx.program_id)?;
+                        },
+                        Err(e) => return Err(e)
+                    }
                 }
-                
-                close_escrow_sol_rate(
+                close_escrow_sol_flat(
                     ctx.accounts.escrow_account.to_account_info(),
-                    ctx.accounts.seller_wallet.to_account_info(),
+                    ctx.accounts.multisig_wallet.to_account_info(),
                     &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
-                    100
-                )
-            },
-            None => return err!(PhysicalMarketErrors::InvalidEscrowBump)
-        }.expect("couldnt close escrow properly");
+                    residual_amt
+                ).expect("couldnt close escrow");
+            }
+            
+            close_escrow_sol_rate(
+                ctx.accounts.escrow_account.to_account_info(),
+                ctx.accounts.seller_wallet.to_account_info(),
+                &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                100
+            )
+        }else{
+            return err!(PhysicalMarketErrors::InvalidEscrowBump)
+        };
 
-        match ctx.bumps.get("phys_auth"){
-            Some(auth_bump) => post_tx_incrementing(
+        if let Some(auth_bump) = ctx.bumps.get("phys_auth"){
+            post_tx_incrementing(
                 ctx.accounts.market_account_program.to_account_info(),
                 ctx.accounts.buyer_account.to_account_info(),
                 ctx.accounts.seller_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
                 ctx.accounts.physical_program.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]]
-            ),
-            None => return err!(PhysicalMarketErrors::InvalidAuthBump)
-        }.expect("could not properly invoke market-accounts program");
+            );
+        }else{
+            return err!(PhysicalMarketErrors::InvalidAuthBump)
+        }
         
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
         Ok(())

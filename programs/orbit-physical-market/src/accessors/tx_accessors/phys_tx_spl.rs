@@ -15,10 +15,10 @@ use anchor_spl::token::{
     Token
 };
 use orbit_multisig::Multisig;
-use transaction::transaction_struct::TransactionState;
+use orbit_transaction::transaction_struct::TransactionState;
+use orbit_product::PhysicalProduct;
 use crate::{
     PhysicalTransaction,
-    PhysicalProduct,
     program::OrbitPhysicalMarket
 };
 

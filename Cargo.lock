@@ -758,7 +758,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#63dfbcb2c07af4ffd92bd7ba0abb8912bab88236"
+source = "git+https://github.com/OrbitEng/accounts#a187e9e62f107190164123421d06a8108480726c"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -872,7 +872,7 @@ dependencies = [
 [[package]]
 name = "orbit-derive-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#388ae273863d4a002a825485ce0a328ab684f8f5"
+source = "git+https://github.com/OrbitEng/product#e285589d06b52057536dc31dc3f4a66836d92bda"
 dependencies = [
  "quote",
  "syn",
@@ -881,12 +881,12 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#2c61e2b35074c21ff47e0f31e71710017e7f5493"
+source = "git+https://github.com/OrbitEng/dispute#d2e67755cb14935334a2e9380e496991e4f1e9dd"
 dependencies = [
  "anchor-lang",
  "market-accounts",
  "orbit-addresses",
- "transaction",
+ "orbit-transaction",
 ]
 
 [[package]]
@@ -908,8 +908,28 @@ dependencies = [
  "orbit-catalog",
  "orbit-dispute",
  "orbit-multisig",
- "product",
- "transaction",
+ "orbit-product",
+ "orbit-transaction",
+]
+
+[[package]]
+name = "orbit-product"
+version = "0.1.0"
+source = "git+https://github.com/OrbitEng/product#e285589d06b52057536dc31dc3f4a66836d92bda"
+dependencies = [
+ "anchor-lang",
+ "market-accounts",
+ "orbit-derive-product",
+]
+
+[[package]]
+name = "orbit-transaction"
+version = "0.1.0"
+source = "git+https://github.com/OrbitEng/transaction#49fe211917e5df888dad55d9c4e7c8363cd2b96b"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "market-accounts",
 ]
 
 [[package]]
@@ -981,15 +1001,6 @@ dependencies = [
  "syn",
  "version_check",
  "yansi",
-]
-
-[[package]]
-name = "product"
-version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#388ae273863d4a002a825485ce0a328ab684f8f5"
-dependencies = [
- "anchor-lang",
- "orbit-derive-product",
 ]
 
 [[package]]
@@ -1392,17 +1403,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "transaction"
-version = "0.1.0"
-source = "git+https://github.com/OrbitEng/transaction#c889f21800a907ac9b5cae3718930a55f3c8367a"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "market-accounts",
- "product",
-]
-
-[[package]]
 name = "typenum"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1410,9 +1410,9 @@ checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcc811dc4066ac62f84f11307873c4850cb653bfa9b1719cee2bd2204a4bc5dd"
+checksum = "6ceab39d59e4c9499d4e5a8ee0e2735b891bb7308ac83dfb4e80cad195c9f6f3"
 
 [[package]]
 name = "unicode-segmentation"
