@@ -684,9 +684,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.134"
+version = "0.2.135"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "329c933548736bc49fd575ee68c89e8be4d260064184389a5b77517cddd99ffb"
+checksum = "68783febc7782c6c5cb401fbda4de5a9898be1762314da0bb2c10ced61f18b0c"
 
 [[package]]
 name = "libsecp256k1"
@@ -758,10 +758,12 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#a187e9e62f107190164123421d06a8108480726c"
+source = "git+https://github.com/OrbitEng/accounts#ef5bc75669e5f967f537e20f14812387e9e8af97"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
+ "orbit-product",
+ "orbit-transaction",
 ]
 
 [[package]]
@@ -854,25 +856,15 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#a8e5f9b6b2b0906c1db7aec74dbc065aec77306a"
+source = "git+https://github.com/OrbitEng/addresses#4eddf61edebf8002ecfa21cbe32737ea3bbd8b80"
 dependencies = [
  "anchor-lang",
-]
-
-[[package]]
-name = "orbit-catalog"
-version = "0.1.0"
-source = "git+https://github.com/OrbitEng/catalog#64cd7b57952482df5e8761ceebaf87e445054daa"
-dependencies = [
- "anchor-lang",
- "market-accounts",
- "orbit-addresses",
 ]
 
 [[package]]
 name = "orbit-derive-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#e285589d06b52057536dc31dc3f4a66836d92bda"
+source = "git+https://github.com/OrbitEng/product#e8dee3d03b9e645038dc2557c1f7c59e0f9408d6"
 dependencies = [
  "quote",
  "syn",
@@ -905,7 +897,6 @@ dependencies = [
  "anchor-spl",
  "market-accounts",
  "orbit-addresses",
- "orbit-catalog",
  "orbit-dispute",
  "orbit-multisig",
  "orbit-product",
@@ -915,21 +906,21 @@ dependencies = [
 [[package]]
 name = "orbit-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#e285589d06b52057536dc31dc3f4a66836d92bda"
+source = "git+https://github.com/OrbitEng/product#e8dee3d03b9e645038dc2557c1f7c59e0f9408d6"
 dependencies = [
  "anchor-lang",
- "market-accounts",
+ "orbit-addresses",
  "orbit-derive-product",
 ]
 
 [[package]]
 name = "orbit-transaction"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/transaction#49fe211917e5df888dad55d9c4e7c8363cd2b96b"
+source = "git+https://github.com/OrbitEng/transaction#54786ebfe39495fd67e3fd4f7fe70cbf8a0fa313"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
- "market-accounts",
+ "orbit-addresses",
 ]
 
 [[package]]
@@ -1182,9 +1173,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.85"
+version = "1.0.86"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
+checksum = "41feea4228a6f1cd09ec7a3593a682276702cd67b5273544757dae23c096f074"
 dependencies = [
  "itoa",
  "ryu",

@@ -18,10 +18,9 @@ default = []
 [dependencies]
 anchor-lang = "0.25.0"
 anchor-spl = "0.25.0"
-orbit-product = {git = "https://github.com/OrbitEng/product"}
-orbit-transaction = {git = "https://github.com/OrbitEng/transaction"}
+orbit-product = {git = "https://github.com/OrbitEng/product", features = ["cpi"]}
+orbit-transaction = {git = "https://github.com/OrbitEng/transaction", features = ["cpi"]}
 orbit-dispute = {git = "https://github.com/OrbitEng/dispute", features = ["cpi"]}
 market-accounts = {git = "https://github.com/OrbitEng/accounts", features = ["cpi"]}
-orbit-catalog = {git = "https://github.com/OrbitEng/catalog", features = ["cpi"]}
 orbit-multisig = {git = "https://github.com/OrbitEng/multisig", features=["no-entrypoint"]}
 orbit-addresses = {git = "https://github.com/OrbitEng/addresses"}
