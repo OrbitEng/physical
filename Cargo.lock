@@ -758,7 +758,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#ef5bc75669e5f967f537e20f14812387e9e8af97"
+source = "git+https://github.com/OrbitEng/accounts#233bb367c6e66368f5324929d871e46e30c466ea"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -856,7 +856,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#4eddf61edebf8002ecfa21cbe32737ea3bbd8b80"
+source = "git+https://github.com/OrbitEng/addresses#1e54eee9be87c30c78e7576e8711c56f7c6f3516"
 dependencies = [
  "anchor-lang",
 ]
@@ -864,7 +864,7 @@ dependencies = [
 [[package]]
 name = "orbit-derive-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#e8dee3d03b9e645038dc2557c1f7c59e0f9408d6"
+source = "git+https://github.com/OrbitEng/product#7ad935a6cfe5b20b22ea82f7b95ba1aa9993eb68"
 dependencies = [
  "quote",
  "syn",
@@ -873,7 +873,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#d2e67755cb14935334a2e9380e496991e4f1e9dd"
+source = "git+https://github.com/OrbitEng/dispute#6690dcea8dd347938764c5e4cdcccfd5ddcadb16"
 dependencies = [
  "anchor-lang",
  "market-accounts",
@@ -906,7 +906,7 @@ dependencies = [
 [[package]]
 name = "orbit-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#e8dee3d03b9e645038dc2557c1f7c59e0f9408d6"
+source = "git+https://github.com/OrbitEng/product#7ad935a6cfe5b20b22ea82f7b95ba1aa9993eb68"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "orbit-transaction"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/transaction#54786ebfe39495fd67e3fd4f7fe70cbf8a0fa313"
+source = "git+https://github.com/OrbitEng/transaction#126059085128825f99cccd1935d92876da4f71f6"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

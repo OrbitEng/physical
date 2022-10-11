@@ -33,6 +33,10 @@ pub mod orbit_physical_market {
         PhysicalTransaction::fund_escrow_sol(ctx)
     }
 
+    pub fn seller_early_decline_sol(ctx: Context<SellerEarlyDeclineSol>) -> Result<()>{
+        PhysicalTransaction::seller_early_decline_sol(ctx)
+    }
+
     /// SPL
     pub fn open_transaction_spl(ctx: Context<OpenPhysicalTransactionSpl>, seller_index: u8, buyer_index: u8, price: u64, use_discount: bool) -> Result<()>{
         PhysicalTransaction::open_spl(ctx, seller_index, buyer_index, price, use_discount)
@@ -46,6 +50,11 @@ pub mod orbit_physical_market {
         PhysicalTransaction::fund_escrow_spl(ctx)
     }
 
+    pub fn seller_early_decline_spl(ctx: Context<SellerEarlyDeclineSpl>) -> Result<()>{
+        PhysicalTransaction::seller_early_decline_spl(ctx)
+    }
+
+    /// COMMON
     pub fn close_transaction_account(ctx: Context<CloseTransactionAccount>) -> Result<()>{
         PhysicalTransaction::close_transaction_account(ctx)
     }

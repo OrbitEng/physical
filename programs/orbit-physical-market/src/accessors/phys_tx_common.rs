@@ -20,7 +20,7 @@ use market_accounts::{
 use orbit_transaction::{
     TransactionState,
     OrbitTransactionTrait,
-    TransactionErrors, BuyerOpenTransactions, SellerOpenTransactions
+    TransactionErrors, BuyerOpenTransactions, SellerOpenTransactions, TransactionReviews
 };
 use crate::{
     PhysicalTransaction,
@@ -64,36 +64,23 @@ pub struct CloseTransactionAccount<'info>{
 
     #[account(
         constraint = 
-            (market_account.key() == phys_transaction.metadata.buyer) ||
-            (market_account.key() == phys_transaction.metadata.seller),
-        seeds = [
-            b"orbit_account",
-            wallet.key().as_ref()
-        ],
-        bump,
-        seeds::program = market_accounts::ID
+            (transactions_log.key() == phys_transaction.metadata.buyer) ||
+            (transactions_log.key() == phys_transaction.metadata.seller),
+        constraint = transactions_log.try_borrow_data()?[8..40] == wallet.key().to_bytes()
     )]
-    pub market_account: Box<Account<'info, OrbitMarketAccount>>,
+    /// CHECK: basic checks
+    pub transactions_log: AccountInfo<'info>,
 
-    #[account(
-        address = market_account.wallet
-    )]
     pub wallet: Signer<'info>,
 
     #[account(
-        constraint = buyer_market_account.key() == phys_transaction.metadata.buyer,
-        seeds = [
-            b"orbit_account",
-            buyer_wallet.key().as_ref()
-        ],
-        bump,
-        seeds::program = market_accounts::ID
+        address = phys_transaction.metadata.buyer,
+        has_one = buyer_wallet
     )]
-    pub buyer_market_account: Box<Account<'info, OrbitMarketAccount>>,
+    pub buyer_transactions: Box<Account<'info, BuyerOpenTransactions>>,
 
     #[account(
-        mut,
-        address = buyer_market_account.wallet
+        mut
     )]
     pub buyer_wallet: SystemAccount<'info>
 }
@@ -129,6 +116,10 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
         ctx.accounts.phys_transaction.metadata.buyer_tx_index = buyer_index;
         ctx.accounts.phys_transaction.metadata.seller_tx_index = seller_index;
+        ctx.accounts.phys_transaction.metadata.reviews = TransactionReviews{
+            buyer: false,
+            seller: false
+        };
 
         orbit_product::cpi::update_product_quantity_internal(
             CpiContext::new(
@@ -197,10 +188,12 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.phys_product.metadata.currency;
         ctx.accounts.phys_transaction.metadata.buyer_tx_index = buyer_index;
         ctx.accounts.phys_transaction.metadata.seller_tx_index = seller_index;
-
         ctx.accounts.phys_transaction.metadata.funded = false;
-
         ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
+        ctx.accounts.phys_transaction.metadata.reviews = TransactionReviews{
+            buyer: false,
+            seller: false
+        };
 
         orbit_product::cpi::update_product_quantity_internal(
             CpiContext::new(
@@ -238,6 +231,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             ),
             seller_index
         )?;
+        
         Ok(())
     }
 
@@ -464,7 +458,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
     }
 
     fn close_transaction_account(ctx: Context<CloseTransactionAccount>) -> Result<()>{
-        ctx.accounts.phys_transaction.close(ctx.accounts.buyer_market_account.to_account_info())
+        ctx.accounts.phys_transaction.close(ctx.accounts.buyer_wallet.to_account_info())
     }
     
     fn seller_early_decline_sol(ctx: Context<SellerEarlyDeclineSol>) -> Result<()>{
@@ -523,18 +517,16 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
 
         if ctx.accounts.phys_transaction.metadata.rate == 100{
-            if ctx.accounts.phys_transaction.metadata.rate == 100{
-                market_accounts::cpi::increment_dispute_discounts(
-                    CpiContext::new(
-                        ctx.accounts.market_account_program.to_account_info(),
-                        market_accounts::cpi::accounts::MarketAccountUpdateInternal{
-                            market_account: ctx.accounts.buyer_account.to_account_info(),
-                            caller_auth: ctx.accounts.physical_auth.to_account_info(),
-                            caller: ctx.accounts.physical_program.to_account_info()
-                        }
-                    )
-                )?;
-            };
+            market_accounts::cpi::increment_dispute_discounts(
+                CpiContext::new(
+                    ctx.accounts.market_account_program.to_account_info(),
+                    market_accounts::cpi::accounts::MarketAccountUpdateInternal{
+                        market_account: ctx.accounts.buyer_account.to_account_info(),
+                        caller_auth: ctx.accounts.physical_auth.to_account_info(),
+                        caller: ctx.accounts.physical_program.to_account_info()
+                    }
+                )
+            )?;
         }
 
         if let Some(auth_bump) = ctx.bumps.get("phys_auth"){
@@ -883,6 +875,9 @@ pub fn confirm_delivery(ctx: Context<BuyerConfirm>) -> Result<()>{
 }
 
 pub fn confirm_product(ctx: Context<BuyerConfirm>) -> Result<()>{
+    if ctx.accounts.phys_transaction.metadata.transaction_state != TransactionState::BuyerConfirmedDelivery{
+        return err!(PhysicalMarketErrors::DidNotConfirmDelivery);
+    }
     ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerConfirmedProduct;
     Ok(())
 }
@@ -894,7 +889,10 @@ pub fn confirm_product(ctx: Context<BuyerConfirm>) -> Result<()>{
 pub struct LeaveReview<'info>{
     /////////////////////////////////////////////////
     /// TX
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = phys_transaction.metadata.transaction_state == TransactionState::Closed
+    )]
     pub phys_transaction: Account<'info, PhysicalTransaction>,
 
     /////////////////////////////////////////////////

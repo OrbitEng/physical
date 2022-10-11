@@ -231,8 +231,7 @@ pub struct SellerEarlyDeclineSol<'info>{
     ////////////////////////////////////////////
     /// TX
     #[account(
-        mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
+        mut
     )]
     pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
 

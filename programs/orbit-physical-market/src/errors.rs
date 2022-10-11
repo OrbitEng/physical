@@ -14,4 +14,6 @@ pub enum PhysicalMarketErrors{
     InvalidReflink,
     #[msg("not a transaction participant")]
     InvalidTransactionInvoker,
+    #[msg("Please confirm delivery first")]
+    DidNotConfirmDelivery,
 }
