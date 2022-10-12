@@ -74,12 +74,6 @@ pub struct CloseTransactionAccount<'info>{
     pub wallet: Signer<'info>,
 
     #[account(
-        address = phys_transaction.metadata.buyer,
-        has_one = buyer_wallet
-    )]
-    pub buyer_transactions: Box<Account<'info, BuyerOpenTransactions>>,
-
-    #[account(
         mut
     )]
     pub buyer_wallet: SystemAccount<'info>
@@ -312,7 +306,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::ClearBuyerTransactions{
-                    transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
+                    transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
@@ -411,7 +405,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::ClearBuyerTransactions{
-                    transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
+                    transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
@@ -503,7 +497,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::ClearBuyerTransactions{
-                    transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
+                    transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
@@ -559,7 +553,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::ClearBuyerTransactions{
-                    transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
+                    transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
@@ -737,7 +731,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::ClearBuyerTransactions{
-                    transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
+                    transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
@@ -806,7 +800,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::ClearBuyerTransactions{
-                    transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
+                    transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }

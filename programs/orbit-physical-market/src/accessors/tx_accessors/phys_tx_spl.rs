@@ -35,6 +35,7 @@ pub struct OpenPhysicalTransactionSpl<'info>{
         space = 1000,
         seeds = [
             b"orbit_physical_transaction",
+            seller_transactions_log.key().as_ref(),
             [seller_tx_index].as_ref()
         ],
         bump
@@ -46,8 +47,9 @@ pub struct OpenPhysicalTransactionSpl<'info>{
         token::mint = token_mint,
         token::authority = physical_auth,
         seeds = [
-            b"physical_escrow_spl",
+            b"orbit_escrow_account",
             phys_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump,
         payer = buyer_wallet
@@ -136,8 +138,9 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     #[account(
         mut,
         seeds = [
-            b"physical_escrow_spl",
+            b"orbit_escrow_account",
             phys_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump,
         
@@ -223,8 +226,9 @@ pub struct SellerEarlyDeclineSpl<'info>{
     #[account(
         mut,
         seeds = [
-            b"physical_escrow_spl",
+            b"orbit_escrow_account",
             phys_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump,
         
@@ -274,11 +278,6 @@ pub struct SellerEarlyDeclineSpl<'info>{
         bump
     )]
     pub physical_auth: SystemAccount<'info>,
-    
-    #[account(
-        token::authority = Pubkey::new(orbit_addresses::MULTISIG_SIGNER)
-    )]
-    pub multisig_ata: Account<'info, TokenAccount>,
 
     pub market_account_program: Program<'info, OrbitMarketAccounts>,
     
@@ -303,8 +302,9 @@ pub struct FundEscrowSpl<'info>{
     #[account(
         mut,
         seeds = [
-            b"physical_escrow_spl",
-            phys_transaction.key().as_ref()
+            b"orbit_escrow_account",
+            phys_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump,
         address = phys_transaction.metadata.escrow_account
@@ -357,8 +357,9 @@ pub struct ClosePhysicalDisputeSpl<'info>{
     #[account(
         mut,
         seeds = [
-            b"physical_escrow_spl",
-            phys_transaction.key().as_ref()
+            b"orbit_escrow_account",
+            phys_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump
     )]

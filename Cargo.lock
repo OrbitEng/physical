@@ -758,7 +758,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#233bb367c6e66368f5324929d871e46e30c466ea"
+source = "git+https://github.com/OrbitEng/accounts#5cfcb6c302b6a8af3f9a13dd432c4c70df0738d4"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -864,7 +864,7 @@ dependencies = [
 [[package]]
 name = "orbit-derive-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#7ad935a6cfe5b20b22ea82f7b95ba1aa9993eb68"
+source = "git+https://github.com/OrbitEng/product#fa7d89bec01da696fc654c8a6196ffa2d4a172c3"
 dependencies = [
  "quote",
  "syn",
@@ -873,7 +873,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#6690dcea8dd347938764c5e4cdcccfd5ddcadb16"
+source = "git+https://github.com/OrbitEng/dispute#f5d1bf439d453f1a02c900047a1d722bf12a057c"
 dependencies = [
  "anchor-lang",
  "market-accounts",
@@ -906,7 +906,7 @@ dependencies = [
 [[package]]
 name = "orbit-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#7ad935a6cfe5b20b22ea82f7b95ba1aa9993eb68"
+source = "git+https://github.com/OrbitEng/product#fa7d89bec01da696fc654c8a6196ffa2d4a172c3"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -1234,9 +1234,9 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "solana-frozen-abi"
-version = "1.10.40"
+version = "1.10.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbca3f53c37c887c1bb1e0d906fccfa16df09402279c8139280a4048e63440e0"
+checksum = "d343b3838e95561548a2a651787d17aebf0a3f490f193746ee58f174f65bd7c3"
 dependencies = [
  "bs58 0.4.0",
  "bv",
@@ -1256,9 +1256,9 @@ dependencies = [
 
 [[package]]
 name = "solana-frozen-abi-macro"
-version = "1.10.40"
+version = "1.10.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61c08268bea875a8a1e706100b513dd00e79938159682fd8547feef4281b2208"
+checksum = "a37211ec8dff16b08fcb422807fa7f046bbc6417bc43e00a2f2effd8fafec6bc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1268,9 +1268,9 @@ dependencies = [
 
 [[package]]
 name = "solana-program"
-version = "1.10.40"
+version = "1.10.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11eb0a3e4702fffa83731f77f00a5ecd7d5328f83ac2bb449e323951655be93a"
+checksum = "f9622af117fe254208f1fe99a533ea523624d64745d6cffecd986da6753662ef"
 dependencies = [
  "base64 0.13.0",
  "bincode",
@@ -1310,9 +1310,9 @@ dependencies = [
 
 [[package]]
 name = "solana-sdk-macro"
-version = "1.10.40"
+version = "1.10.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50ffe1f465b2dd9ed72e5f05d0a1d1dfc62bc37b582b9dc93525eb987fba9e60"
+checksum = "8d036e3a52e5570114ec9ab56a1d0a6659e1ebd1c948605318b4e35eafca4515"
 dependencies = [
  "bs58 0.4.0",
  "proc-macro2",

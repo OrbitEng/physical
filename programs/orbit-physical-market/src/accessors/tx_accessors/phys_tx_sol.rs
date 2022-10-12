@@ -30,6 +30,7 @@ pub struct OpenPhysicalTransactionSol<'info>{
         space = 400,
         seeds = [
             b"orbit_physical_transaction",
+            seller_transactions_log.key().as_ref(),
             [seller_tx_index].as_ref()
         ],
         bump
@@ -283,12 +284,6 @@ pub struct SellerEarlyDeclineSol<'info>{
 
     //////////////////////////////////
     /// CPI AND EXTRANEOUS
-    
-    #[account(
-        mut,
-        address = Pubkey::new(orbit_addresses::MULTISIG_SIGNER)
-    )]
-    pub multisig_wallet: SystemAccount<'info>,
 
     #[account(
         seeds = [b"market_authority"],
