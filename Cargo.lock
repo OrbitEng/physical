@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "orbit-transaction"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/transaction#126059085128825f99cccd1935d92876da4f71f6"
+source = "git+https://github.com/OrbitEng/transaction#caaf8d8184f9f41d99925afb0ba451d2759a2efe"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
