@@ -758,7 +758,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#5cfcb6c302b6a8af3f9a13dd432c4c70df0738d4"
+source = "git+https://github.com/OrbitEng/accounts#eb22e7b313a3c58127bbd3a6d4786b1fc577b4e8"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -864,7 +864,7 @@ dependencies = [
 [[package]]
 name = "orbit-derive-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#fa7d89bec01da696fc654c8a6196ffa2d4a172c3"
+source = "git+https://github.com/OrbitEng/product#72258798a984255960335982300210f5dd97ce67"
 dependencies = [
  "quote",
  "syn",
@@ -884,7 +884,7 @@ dependencies = [
 [[package]]
 name = "orbit-multisig"
 version = "0.9.0"
-source = "git+https://github.com/OrbitEng/multisig#7b26841133b0330bef94ab46344f18a1123e7b9b"
+source = "git+https://github.com/OrbitEng/multisig#3d7ff38c55fd1357f006b76e90c9a31653e9b369"
 dependencies = [
  "anchor-lang",
 ]
@@ -906,7 +906,7 @@ dependencies = [
 [[package]]
 name = "orbit-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#fa7d89bec01da696fc654c8a6196ffa2d4a172c3"
+source = "git+https://github.com/OrbitEng/product#72258798a984255960335982300210f5dd97ce67"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -974,9 +974,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.46"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94e2ef8dbfc347b10c094890f778ee2e36ca9bb4262e86dc99cd217e35f3470b"
+checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
 ]
