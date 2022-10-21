@@ -48,7 +48,6 @@ pub struct OpenPhysicalTransactionSol<'info>{
 
     #[account(
         mut,
-        constraint = phys_product.metadata.currency == System::id(),
         constraint = phys_product.quantity > 0
     )] 
     pub phys_product: Box<Account<'info, PhysicalProduct>>,

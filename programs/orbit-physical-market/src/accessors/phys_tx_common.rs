@@ -105,7 +105,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
-        ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.phys_product.metadata.currency;
+        ctx.accounts.phys_transaction.metadata.currency = System::id();
         ctx.accounts.phys_transaction.metadata.funded = false;
         ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
         ctx.accounts.phys_transaction.metadata.buyer_tx_index = buyer_index;
@@ -179,7 +179,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
         ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
         ctx.accounts.phys_transaction.metadata.transaction_price = price;
-        ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.phys_product.metadata.currency;
+        ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.token_mint.key();
         ctx.accounts.phys_transaction.metadata.buyer_tx_index = buyer_index;
         ctx.accounts.phys_transaction.metadata.seller_tx_index = seller_index;
         ctx.accounts.phys_transaction.metadata.funded = false;

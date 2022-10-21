@@ -58,14 +58,11 @@ pub struct OpenPhysicalTransactionSpl<'info>{
 
     //////////////////////////////////
     /// PRODUCT
-    #[account(
-        address = phys_product.metadata.currency
-    )]
+    #[account()]
     pub token_mint: Account<'info, Mint>,
 
     #[account(
         mut,
-        constraint = phys_product.metadata.currency != System::id(),
         constraint = phys_product.quantity > 0
     )]
     pub phys_product: Box<Account<'info, PhysicalProduct>>,
