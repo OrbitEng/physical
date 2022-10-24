@@ -81,18 +81,27 @@ pub struct CloseTransactionAccount<'info>{
 
 impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i, OpenPhysicalTransactionSol<'a>, OpenPhysicalTransactionSpl<'b>, ClosePhysicalTransactionSol<'c>, ClosePhysicalTransactionSpl<'d>, FundEscrowSol<'e>, FundEscrowSpl<'f>, CloseTransactionAccount<'g>, SellerEarlyDeclineSol<'h>, SellerEarlyDeclineSpl<'i>> for PhysicalTransaction{
     fn open_sol(ctx: Context<OpenPhysicalTransactionSol>, seller_index: u8, buyer_index: u8, mut price: u64, use_discount: bool) -> Result<()>{
+        
+        let auth_bump: &u8;
+        if let Some(ab) = ctx.bumps.get("physical_auth"){
+            auth_bump = ab
+        }else{
+            return err!(PhysicalMarketErrors::InvalidAuthBump)
+        };
+
         if use_discount && ctx.accounts.buyer_market_account.dispute_discounts > 0{
             ctx.accounts.phys_transaction.metadata.rate = 100;
             price = price * 95 / 100;
             
             market_accounts::cpi::decrement_dispute_discounts(
-                CpiContext::new(
+                CpiContext::new_with_signer(
                     ctx.accounts.market_account_program.to_account_info(),
                     market_accounts::cpi::accounts::MarketAccountUpdateInternal{
                         market_account: ctx.accounts.buyer_market_account.to_account_info(),
                         caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller: ctx.accounts.physical_program.to_account_info()
-                    }
+                    },
+                    &[&[b"market_auth", &[*auth_bump]]]
                 )
             )?;
 
@@ -116,14 +125,15 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         };
 
         orbit_product::cpi::update_product_quantity_internal(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.product_program.to_account_info(),
                 orbit_product::cpi::accounts::UpdateProductFieldInternal{
                     product: ctx.accounts.phys_product.to_account_info(),
                     vendor_listings: ctx.accounts.seller_listings.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
-                }
+                },
+                &[&[b"market_auth", &[*auth_bump]]]
             ),
             ctx.accounts.phys_product.quantity-1
         )?;
@@ -140,14 +150,15 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             buyer_index
         )?;
         orbit_transaction::cpi::add_to_seller_transactions_log(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::AddSellerTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     tx: ctx.accounts.phys_transaction.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
-                }
+                },
+                &[&[b"market_auth", &[*auth_bump]]]
             ),
             seller_index
         )?;
@@ -155,18 +166,25 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
     }
 
     fn open_spl(ctx: Context<OpenPhysicalTransactionSpl>, seller_index: u8, buyer_index: u8, mut price: u64, use_discount: bool) -> Result<()>{
+        let auth_bump: &u8;
+        if let Some(ab) = ctx.bumps.get("physical_auth"){
+            auth_bump = ab
+        }else{
+            return err!(PhysicalMarketErrors::InvalidAuthBump)
+        };
         if use_discount && ctx.accounts.buyer_market_account.dispute_discounts > 0{
             ctx.accounts.phys_transaction.metadata.rate = 100;
             price = price * 95 / 100;
             
             market_accounts::cpi::decrement_dispute_discounts(
-                CpiContext::new(
+                CpiContext::new_with_signer(
                     ctx.accounts.market_account_program.to_account_info(),
                     market_accounts::cpi::accounts::MarketAccountUpdateInternal{
                         market_account: ctx.accounts.buyer_market_account.to_account_info(),
                         caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller: ctx.accounts.physical_program.to_account_info()
-                    }
+                    },
+                    &[&[b"market_auth", &[*auth_bump]]]
                 )
             )?;
 
@@ -190,14 +208,15 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         };
 
         orbit_product::cpi::update_product_quantity_internal(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.product_program.to_account_info(),
                 orbit_product::cpi::accounts::UpdateProductFieldInternal{
                     product: ctx.accounts.phys_product.to_account_info(),
                     vendor_listings: ctx.accounts.seller_listings.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
-                }
+                },
+                    &[&[b"market_auth", &[*auth_bump]]]
             ),
             ctx.accounts.phys_product.quantity-1
         )?;
@@ -214,14 +233,15 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             buyer_index
         )?;
         orbit_transaction::cpi::add_to_seller_transactions_log(
-            CpiContext::new(
+            CpiContext::new_with_signer(
                 ctx.accounts.transaction_program.to_account_info(),
                 orbit_transaction::cpi::accounts::AddSellerTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     tx: ctx.accounts.phys_transaction.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
-                }
+                },
+                    &[&[b"market_auth", &[*auth_bump]]]
             ),
             seller_index
         )?;
