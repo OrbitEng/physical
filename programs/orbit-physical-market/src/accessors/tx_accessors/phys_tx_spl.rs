@@ -89,6 +89,7 @@ pub struct OpenPhysicalTransactionSpl<'info>{
     
     /// SELLER
     #[account(
+        mut,
         address = phys_product.metadata.owner_catalog
     )]
     pub seller_listings: Box<Account<'info, ListingsStruct>>,
