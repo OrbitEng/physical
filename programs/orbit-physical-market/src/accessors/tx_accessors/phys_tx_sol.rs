@@ -40,7 +40,8 @@ pub struct OpenPhysicalTransactionSol<'info>{
     #[account(
         seeds = [
             b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
+            phys_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump
     )]
