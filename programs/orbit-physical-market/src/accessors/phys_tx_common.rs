@@ -101,7 +101,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                         caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller: ctx.accounts.physical_program.to_account_info()
                     },
-                    &[&[b"market_auth", &[*auth_bump]]]
+                    &[&[b"market_authority", &[*auth_bump]]]
                 )
             )?;
 
@@ -133,7 +133,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 },
-                &[&[b"market_auth", &[*auth_bump]]]
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             ctx.accounts.phys_product.quantity-1
         )?;
@@ -158,7 +158,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 },
-                &[&[b"market_auth", &[*auth_bump]]]
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             seller_index
         )?;
@@ -184,7 +184,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                         caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller: ctx.accounts.physical_program.to_account_info()
                     },
-                    &[&[b"market_auth", &[*auth_bump]]]
+                    &[&[b"market_authority", &[*auth_bump]]]
                 )
             )?;
 
@@ -216,7 +216,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 },
-                    &[&[b"market_auth", &[*auth_bump]]]
+                    &[&[b"market_authority", &[*auth_bump]]]
             ),
             ctx.accounts.phys_product.quantity-1
         )?;
@@ -241,7 +241,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 },
-                    &[&[b"market_auth", &[*auth_bump]]]
+                    &[&[b"market_authority", &[*auth_bump]]]
             ),
             seller_index
         )?;
