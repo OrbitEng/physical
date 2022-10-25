@@ -22,8 +22,6 @@ use crate::{
 #[derive(Accounts)]
 #[instruction(seller_tx_index: u8)]
 pub struct OpenPhysicalTransactionSol<'info>{
-    ////////////////////////////////
-    /// TX
     #[account(
         init,
         payer = buyer_wallet,
@@ -31,7 +29,7 @@ pub struct OpenPhysicalTransactionSol<'info>{
         seeds = [
             b"orbit_physical_transaction",
             seller_transactions_log.key().as_ref(),
-            [seller_tx_index].as_ref()
+            &[seller_tx_index]
         ],
         bump
     )]
@@ -53,10 +51,6 @@ pub struct OpenPhysicalTransactionSol<'info>{
     )] 
     pub phys_product: Box<Account<'info, PhysicalProduct>>,
     
-    //////////////////////////////////////////////////
-    /// BUYER SELLER
-    
-    /// BUYER
     #[account(mut)]
     pub buyer_transactions_log: Box<Account<'info, BuyerOpenTransactions>>,
 
@@ -73,7 +67,6 @@ pub struct OpenPhysicalTransactionSol<'info>{
     )]
     pub buyer_wallet: Signer<'info>,
     
-    /// SELLER
     #[account(
         mut,
         address = phys_product.metadata.owner_catalog
@@ -86,8 +79,6 @@ pub struct OpenPhysicalTransactionSol<'info>{
     )]
     pub seller_transactions_log: Box<Account<'info, SellerOpenTransactions>>,
 
-    /////////////////////////////////
-    /// EXTRANEOUS
     
     #[account(
         seeds = [b"market_authority"],
