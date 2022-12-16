@@ -16,8 +16,8 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.25.0"
-anchor-spl = "0.25.0"
+anchor-lang = "0.26.0"
+anchor-spl = "0.26.0"
 orbit-product = {git = "https://github.com/OrbitEng/product", features = ["cpi"]}
 orbit-transaction = {git = "https://github.com/OrbitEng/transaction", features = ["cpi"]}
 orbit-dispute = {git = "https://github.com/OrbitEng/dispute", features = ["cpi"]}
