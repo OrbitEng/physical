@@ -58,20 +58,24 @@ use anchor_spl::token::{
 pub struct CloseTransactionAccount<'info>{
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::Closed,
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::Closed,
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub physical_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
+        has_one = wallet,
         constraint = 
-            (transactions_log.key() == phys_transaction.metadata.buyer) ||
-            (transactions_log.key() == phys_transaction.metadata.seller),
-        constraint = transactions_log.try_borrow_data()?[8..40] == wallet.key().to_bytes()
+        (proposer_account.voter_id == physical_transaction.metadata.seller) ||
+        (proposer_account.voter_id == physical_transaction.metadata.buyer)
     )]
-    /// CHECK: basic checks
-    pub transactions_log: AccountInfo<'info>,
+    pub proposer_account: Account<'info, OrbitMarketAccount>,
 
     pub wallet: Signer<'info>,
+    
+    #[account(
+        constraint = buyer_account.voter_id == physical_transaction.metadata.buyer
+    )]
+    pub buyer_account: Account<'info, OrbitMarketAccount>,
 
     #[account(
         mut
@@ -90,7 +94,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         };
 
         if use_discount && ctx.accounts.buyer_market_account.dispute_discounts > 0{
-            ctx.accounts.phys_transaction.metadata.rate = 100;
+            ctx.accounts.physical_transaction.metadata.rate = 100;
             price = price * 95 / 100;
             
             market_accounts::cpi::decrement_dispute_discounts(
@@ -106,20 +110,19 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             )?;
 
         }else{
-            ctx.accounts.phys_transaction.metadata.rate = 95
+            ctx.accounts.physical_transaction.metadata.rate = 95
         }
 
-        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_transactions_log.key();
-        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_transactions_log.key();
-        ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
-        ctx.accounts.phys_transaction.metadata.transaction_price = price;
-        ctx.accounts.phys_transaction.metadata.currency = System::id();
-        ctx.accounts.phys_transaction.metadata.funded = false;
-        ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
-        ctx.accounts.phys_transaction.metadata.buyer_tx_index = buyer_index;
-        ctx.accounts.phys_transaction.metadata.seller_tx_index = seller_index;
-        ctx.accounts.phys_transaction.metadata.reviews = TransactionReviews{
+        ctx.accounts.physical_transaction.metadata.buyer = ctx.accounts.buyer_market_account.voter_id;
+        ctx.accounts.physical_transaction.metadata.seller = ctx.accounts.seller_market_account.voter_id;
+        ctx.accounts.physical_transaction.metadata.product = ctx.accounts.phys_product.metadata.index;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Opened;
+        ctx.accounts.physical_transaction.metadata.transaction_price = price;
+        ctx.accounts.physical_transaction.metadata.currency = System::id();
+        ctx.accounts.physical_transaction.metadata.funded = false;
+        ctx.accounts.physical_transaction.metadata.buyer_tx_index = buyer_index;
+        ctx.accounts.physical_transaction.metadata.seller_tx_index = seller_index;
+        ctx.accounts.physical_transaction.metadata.reviews = TransactionReviews{
             buyer: false,
             seller: false
         };
@@ -138,25 +141,24 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             ctx.accounts.phys_product.quantity-1
         )?;
 
-        orbit_transaction::cpi::add_to_buyer_transactions_log(
+        orbit_transaction::cpi::add_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::AddBuyerTransactions{
+                orbit_transaction::cpi::accounts::AddBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
-                    tx: ctx.accounts.phys_transaction.to_account_info(),
-                    buyer_wallet: ctx.accounts.buyer_wallet.to_account_info()
+                    tx: ctx.accounts.physical_transaction.to_account_info(),
+                    buyer_account: ctx.accounts.buyer_market_account.to_account_info(),
+                    wallet: ctx.accounts.buyer_wallet.to_account_info(),
                 }
             ),
             buyer_index
         )?;
-        orbit_transaction::cpi::add_to_seller_transactions_log(
+        orbit_transaction::cpi::add_seller_physical_transaction(
             CpiContext::new_with_signer(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::AddSellerTransactions{
+                orbit_transaction::cpi::accounts::AddSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
-                    tx: ctx.accounts.phys_transaction.to_account_info(),
-                    caller_auth: ctx.accounts.physical_auth.to_account_info(),
-                    caller: ctx.accounts.physical_program.to_account_info()
+                    tx: ctx.accounts.physical_transaction.to_account_info()
                 },
                 &[&[b"market_authority", &[*auth_bump]]]
             ),
@@ -173,7 +175,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         };
         if use_discount && ctx.accounts.buyer_market_account.dispute_discounts > 0{
-            ctx.accounts.phys_transaction.metadata.rate = 100;
+            ctx.accounts.physical_transaction.metadata.rate = 100;
             price = price * 95 / 100;
             
             market_accounts::cpi::decrement_dispute_discounts(
@@ -189,20 +191,19 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             )?;
 
         }else{
-            ctx.accounts.phys_transaction.metadata.rate = 95
+            ctx.accounts.physical_transaction.metadata.rate = 95
         };
         
-        ctx.accounts.phys_transaction.metadata.buyer = ctx.accounts.buyer_transactions_log.key();
-        ctx.accounts.phys_transaction.metadata.seller = ctx.accounts.seller_transactions_log.key();
-        ctx.accounts.phys_transaction.metadata.product = ctx.accounts.phys_product.key();
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Opened;
-        ctx.accounts.phys_transaction.metadata.transaction_price = price;
-        ctx.accounts.phys_transaction.metadata.currency = ctx.accounts.token_mint.key();
-        ctx.accounts.phys_transaction.metadata.buyer_tx_index = buyer_index;
-        ctx.accounts.phys_transaction.metadata.seller_tx_index = seller_index;
-        ctx.accounts.phys_transaction.metadata.funded = false;
-        ctx.accounts.phys_transaction.metadata.escrow_account = ctx.accounts.escrow_account.key();
-        ctx.accounts.phys_transaction.metadata.reviews = TransactionReviews{
+        ctx.accounts.physical_transaction.metadata.buyer = ctx.accounts.buyer_market_account.voter_id;
+        ctx.accounts.physical_transaction.metadata.seller = ctx.accounts.seller_market_account.voter_id;
+        ctx.accounts.physical_transaction.metadata.product = ctx.accounts.phys_product.metadata.index;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Opened;
+        ctx.accounts.physical_transaction.metadata.transaction_price = price;
+        ctx.accounts.physical_transaction.metadata.currency = ctx.accounts.token_mint.key();
+        ctx.accounts.physical_transaction.metadata.buyer_tx_index = buyer_index;
+        ctx.accounts.physical_transaction.metadata.seller_tx_index = seller_index;
+        ctx.accounts.physical_transaction.metadata.funded = false;
+        ctx.accounts.physical_transaction.metadata.reviews = TransactionReviews{
             buyer: false,
             seller: false
         };
@@ -221,27 +222,26 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             ctx.accounts.phys_product.quantity-1
         )?;
 
-        orbit_transaction::cpi::add_to_buyer_transactions_log(
+        orbit_transaction::cpi::add_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::AddBuyerTransactions{
+                orbit_transaction::cpi::accounts::AddBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
-                    tx: ctx.accounts.phys_transaction.to_account_info(),
-                    buyer_wallet: ctx.accounts.buyer_wallet.to_account_info()
+                    tx: ctx.accounts.physical_transaction.to_account_info(),
+                    buyer_account: ctx.accounts.buyer_market_account.to_account_info(),
+                    wallet: ctx.accounts.buyer_wallet.to_account_info(),
                 }
             ),
             buyer_index
         )?;
-        orbit_transaction::cpi::add_to_seller_transactions_log(
+        orbit_transaction::cpi::add_seller_physical_transaction(
             CpiContext::new_with_signer(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::AddSellerTransactions{
+                orbit_transaction::cpi::accounts::AddSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
-                    tx: ctx.accounts.phys_transaction.to_account_info(),
-                    caller_auth: ctx.accounts.physical_auth.to_account_info(),
-                    caller: ctx.accounts.physical_program.to_account_info()
+                    tx: ctx.accounts.physical_transaction.to_account_info()
                 },
-                    &[&[b"market_authority", &[*auth_bump]]]
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             seller_index
         )?;
@@ -250,8 +250,13 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
     }
 
     fn close_sol(ctx: Context<'_, '_, '_, 'c, ClosePhysicalTransactionSol<'c>>) -> Result<()>{
+        let physical_tx = ctx.accounts.physical_transaction.key();
+        let physical_seed = physical_tx.as_ref();
+        let buyer_tx_log = ctx.accounts.buyer_account.key();
+        let buyer_tx_log_seed = buyer_tx_log.as_ref();
+
         if let Some(escrow_seeds) = ctx.bumps.get("escrow_account"){
-            if ctx.accounts.phys_transaction.metadata.rate == 95{
+            if ctx.accounts.physical_transaction.metadata.rate == 95{
                 let bal = ctx.accounts.escrow_account.lamports();
                 let mut residual_amt = bal * 5/100;
                 if  (ctx.accounts.buyer_account.used_reflink != Pubkey::new(&[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])) &&
@@ -262,7 +267,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                     orbit_transaction::close_escrow_sol_flat!(
                         ctx.accounts.escrow_account.to_account_info(),
                         ctx.accounts.buyer_wallet.to_account_info(),
-                        &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                        &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_seeds]]],
                         reflink_amt
                     ).expect("couldnt close escrow");
                     
@@ -271,7 +276,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                             orbit_transaction::close_escrow_sol_flat!(
                                 ctx.accounts.escrow_account.to_account_info(),
                                 reflink_wallet.to_account_info(),
-                                &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                                &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_seeds]]],
                                 reflink_amt
                             ).expect("couldnt close escrow");
                             reflink_wallet.exit(ctx.program_id)?;
@@ -282,7 +287,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                 orbit_transaction::close_escrow_sol_flat!(
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.multisig_wallet.to_account_info(),
-                    &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                    &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_seeds]]],
                     residual_amt
                 ).expect("couldnt close escrow");
             };
@@ -290,7 +295,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             orbit_transaction::close_escrow_sol_rate!(
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.seller_wallet.to_account_info(),
-                &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_seeds]]],
                 100
             )?;
         }else{
@@ -310,37 +315,37 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         };
 
-        orbit_transaction::cpi::clear_from_seller_transactions_log(
+        orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearSellerTransactions{
+                orbit_transaction::cpi::accounts::ClearSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        orbit_transaction::cpi::clear_from_buyer_transactions_log(
+        orbit_transaction::cpi::clear_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearBuyerTransactions{
+                orbit_transaction::cpi::accounts::ClearBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
         
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Closed;
         Ok(())
     }
 
     fn close_spl(ctx: Context<'_, '_, '_, 'd, ClosePhysicalTransactionSpl<'d>>) -> Result<()>{
         if let Some(auth_bump) = ctx.bumps.get("phys_auth"){
-            if ctx.accounts.phys_transaction.metadata.rate == 95{
+            if ctx.accounts.physical_transaction.metadata.rate == 95{
                 let bal = amount(&ctx.accounts.escrow_account.to_account_info()).expect("could not deserialize token account");
                 let mut residual_amt = bal * 5/100;
                 if  (ctx.accounts.buyer_account.used_reflink != Pubkey::new(&[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])) &&
@@ -389,7 +394,7 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                 ctx.accounts.seller_token_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]],
-                ctx.accounts.phys_transaction.metadata.transaction_price,
+                ctx.accounts.physical_transaction.metadata.transaction_price,
                 100
             )
         }else{
@@ -409,31 +414,31 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         };
 
-        orbit_transaction::cpi::clear_from_seller_transactions_log(
+        orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearSellerTransactions{
+                orbit_transaction::cpi::accounts::ClearSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        orbit_transaction::cpi::clear_from_buyer_transactions_log(
+        orbit_transaction::cpi::clear_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearBuyerTransactions{
+                orbit_transaction::cpi::accounts::ClearBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Closed;
         Ok(())
     }
 
@@ -442,15 +447,15 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
             &transfer(
                 &ctx.accounts.buyer_wallet.key(),
                 &ctx.accounts.escrow_account.key(),
-                ctx.accounts.phys_transaction.metadata.transaction_price
+                ctx.accounts.physical_transaction.metadata.transaction_price
             ),
             &[
                 ctx.accounts.buyer_wallet.to_account_info(),
                 ctx.accounts.escrow_account.to_account_info()
             ]
         ).expect("could not fund escrow");
-        ctx.accounts.phys_transaction.metadata.funded = true;
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
+        ctx.accounts.physical_transaction.metadata.funded = true;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
         Ok(())
     }
 
@@ -464,20 +469,20 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                     authority: ctx.accounts.buyer_wallet.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.transaction_price
+            ctx.accounts.physical_transaction.metadata.transaction_price
         ).expect("could not fund escrow account. maybe check your balance");
-        ctx.accounts.phys_transaction.metadata.funded = true;
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
+        ctx.accounts.physical_transaction.metadata.funded = true;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::BuyerFunded;
         Ok(())
     }
 
     fn close_transaction_account(ctx: Context<CloseTransactionAccount>) -> Result<()>{
-        ctx.accounts.phys_transaction.close(ctx.accounts.buyer_wallet.to_account_info())
+        ctx.accounts.physical_transaction.close(ctx.accounts.buyer_wallet.to_account_info())
     }
     
     fn seller_early_decline_sol(ctx: Context<SellerEarlyDeclineSol>) -> Result<()>{
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
-        if ctx.accounts.phys_transaction.metadata.rate == 100{
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Closed;
+        if ctx.accounts.physical_transaction.metadata.rate == 100{
             market_accounts::cpi::increment_dispute_discounts(
                 CpiContext::new(
                     ctx.accounts.market_account_program.to_account_info(),
@@ -489,53 +494,58 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                 )
             )?;
         };
+        
+        let physical_tx = ctx.accounts.physical_transaction.key();
+        let physical_seed = physical_tx.as_ref();
+        let buyer_tx_log = ctx.accounts.buyer_account.key();
+        let buyer_tx_log_seed = buyer_tx_log.as_ref();
 
         if let Some(escrow_seeds) = ctx.bumps.get("escrow_account"){
             orbit_transaction::close_escrow_sol_rate!(
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.buyer_wallet.to_account_info(),
-                &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_seeds]]],
+                &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_seeds]]],
                 100
             )?;
         }else{
             return err!(PhysicalMarketErrors::InvalidEscrowBump)
         };
         
-        orbit_transaction::cpi::clear_from_seller_transactions_log(
+        orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearSellerTransactions{
+                orbit_transaction::cpi::accounts::ClearSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        orbit_transaction::cpi::clear_from_buyer_transactions_log(
+        orbit_transaction::cpi::clear_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearBuyerTransactions{
+                orbit_transaction::cpi::accounts::ClearBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
         Ok(())
     }
 
     fn seller_early_decline_spl(ctx: Context<SellerEarlyDeclineSpl>) -> Result<()>{
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Closed;
 
-        if ctx.accounts.phys_transaction.metadata.rate == 100{
+        if ctx.accounts.physical_transaction.metadata.rate == 100{
             market_accounts::cpi::increment_dispute_discounts(
                 CpiContext::new(
                     ctx.accounts.market_account_program.to_account_info(),
                     market_accounts::cpi::accounts::MarketAccountUpdateInternal{
-                        market_account: ctx.accounts.buyer_account.to_account_info(),
+                        market_account: ctx.accounts.buyer_market_account.to_account_info(),
                         caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller: ctx.accounts.physical_program.to_account_info()
                     }
@@ -550,35 +560,35 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                 ctx.accounts.buyer_token_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]],
-                ctx.accounts.phys_transaction.metadata.transaction_price,
+                ctx.accounts.physical_transaction.metadata.transaction_price,
                 100
             )
         }else{
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         }?;    
         
-        orbit_transaction::cpi::clear_from_seller_transactions_log(
+        orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearSellerTransactions{
+                orbit_transaction::cpi::accounts::ClearSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        orbit_transaction::cpi::clear_from_buyer_transactions_log(
+        orbit_transaction::cpi::clear_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearBuyerTransactions{
+                orbit_transaction::cpi::accounts::ClearBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
         Ok(())
@@ -595,11 +605,11 @@ pub struct OpenPhysicalDispute<'info>{
     #[account(
         mut,
         constraint =
-        (phys_transaction.metadata.transaction_state == TransactionState::BuyerFunded) ||
-        (phys_transaction.metadata.transaction_state == TransactionState::Shipped) ||
-        (phys_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedDelivery)
+        (physical_transaction.metadata.transaction_state == TransactionState::BuyerFunded) ||
+        (physical_transaction.metadata.transaction_state == TransactionState::Shipped) ||
+        (physical_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedDelivery)
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     ////////////////////////////////////////////
     /// DISPUTE
@@ -607,7 +617,7 @@ pub struct OpenPhysicalDispute<'info>{
         mut,
         seeds = [
             b"dispute_account",
-            phys_transaction.key().as_ref()
+            physical_transaction.key().as_ref()
         ],
         seeds::program = orbit_dispute::ID,
         bump
@@ -624,12 +634,12 @@ pub struct OpenPhysicalDispute<'info>{
     /// BUYER SELLER
     
     #[account(
-        constraint = buyer.buyer_physical_transactions == phys_transaction.metadata.buyer
+        constraint = buyer.voter_id == physical_transaction.metadata.buyer
     )]
     pub buyer: Box<Account<'info, OrbitMarketAccount>>,
     
     #[account(
-        constraint = seller.seller_physical_transactions == phys_transaction.metadata.seller
+        constraint = seller.voter_id == physical_transaction.metadata.seller
     )]
     pub seller: Box<Account<'info, OrbitMarketAccount>>,
     
@@ -670,7 +680,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             return err!(PhysicalMarketErrors::DisputeExists)
         }
 
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Frozen;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Frozen;
 
         if let Some(signer_bump) = ctx.bumps.get("physical_auth"){
             orbit_dispute::cpi::open_dispute(
@@ -678,7 +688,7 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                     ctx.accounts.dispute_program.to_account_info(),
                     OpenDispute{
                         new_dispute: ctx.accounts.new_dispute.to_account_info(),
-                        in_transaction: ctx.accounts.phys_transaction.to_account_info(),
+                        in_transaction: ctx.accounts.physical_transaction.to_account_info(),
                         caller_auth: ctx.accounts.physical_auth.to_account_info(),
                         caller_program: ctx.accounts.physical_program.to_account_info(),
                         buyer: ctx.accounts.buyer.to_account_info(),
@@ -699,26 +709,32 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
     
     fn close_dispute_sol(ctx: Context<ClosePhysicalDisputeSol>) -> Result<()>{
 
+        let physical_tx = ctx.accounts.physical_transaction.key();
+        let physical_seed = physical_tx.as_ref();
+        let buyer_tx_log = ctx.accounts.buyer_account.key();
+        let buyer_tx_log_seed = buyer_tx_log.as_ref();
+
         if let Some(escrow_bump) = ctx.bumps.get("escrow_account"){
-            if ctx.accounts.phys_transaction.metadata.rate == 95{
+            if ctx.accounts.physical_transaction.metadata.rate == 95{
                 orbit_transaction::close_escrow_sol_rate!(
                     ctx.accounts.escrow_account.to_account_info(),
                     ctx.accounts.multisig_wallet.to_account_info(),
-                    &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
-                    100 - ctx.accounts.phys_transaction.metadata.rate
+                    &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_bump]]],
+                    100 - ctx.accounts.physical_transaction.metadata.rate
                 ).expect("couldnt close escrow");
             }
             orbit_transaction::close_escrow_sol_rate!(
                 ctx.accounts.escrow_account.to_account_info(),
                 ctx.accounts.favor_wallet.to_account_info(),
-                &[&[b"orbit_escrow_account", ctx.accounts.phys_transaction.key().as_ref(), &[*escrow_bump]]],
+                &[&[b"orbit_escrow_account", physical_seed, buyer_tx_log_seed, &[*escrow_bump]]],
                 100
             )
         }else{
             return err!(PhysicalMarketErrors::InvalidEscrowBump)
         }?;
         
-        if ctx.accounts.phys_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.key() == ctx.accounts.phys_transaction.metadata.buyer {
+        if ctx.accounts.physical_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.voter_id == ctx.accounts.physical_transaction.metadata.buyer {
+            // todo: whyd i fucking do this
             // ctx.accounts.favor_market_account.dispute_discounts += 1;
         }
 
@@ -735,31 +751,31 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         }?;
 
-        orbit_transaction::cpi::clear_from_seller_transactions_log(
+        orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearSellerTransactions{
+                orbit_transaction::cpi::accounts::ClearSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        orbit_transaction::cpi::clear_from_buyer_transactions_log(
+        orbit_transaction::cpi::clear_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearBuyerTransactions{
+                orbit_transaction::cpi::accounts::ClearBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Closed;
         Ok(())
     }
 
@@ -771,8 +787,8 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                 ctx.accounts.multisig_ata.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]],
-                ctx.accounts.phys_transaction.metadata.transaction_price,
-                100-ctx.accounts.phys_transaction.metadata.rate
+                ctx.accounts.physical_transaction.metadata.transaction_price,
+                100-ctx.accounts.physical_transaction.metadata.rate
             ).expect("couldnt close dispute escrow");
             orbit_transaction::close_escrow_spl_rate!(
                 ctx.accounts.token_program.to_account_info(),
@@ -780,14 +796,14 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
                 ctx.accounts.favor_token_account.to_account_info(),
                 ctx.accounts.physical_auth.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]],
-                ctx.accounts.phys_transaction.metadata.transaction_price,
+                ctx.accounts.physical_transaction.metadata.transaction_price,
                 100
             )
         }else{
             return err!(PhysicalMarketErrors::InvalidEscrowBump)
         }?;
 
-        if ctx.accounts.phys_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.key() == ctx.accounts.phys_transaction.metadata.buyer {
+        if ctx.accounts.physical_transaction.metadata.rate == 100 && ctx.accounts.favor_market_account.voter_id == ctx.accounts.physical_transaction.metadata.buyer {
             // ctx.accounts.favor_market_account.dispute_discounts += 1;
         }
 
@@ -804,31 +820,31 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         }?;
 
-        orbit_transaction::cpi::clear_from_seller_transactions_log(
+        orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearSellerTransactions{
+                orbit_transaction::cpi::accounts::ClearSellerPhysicalTransactions{
                     transactions_log: ctx.accounts.seller_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        orbit_transaction::cpi::clear_from_buyer_transactions_log(
+        orbit_transaction::cpi::clear_buyer_physical_transaction(
             CpiContext::new(
                 ctx.accounts.transaction_program.to_account_info(),
-                orbit_transaction::cpi::accounts::ClearBuyerTransactions{
+                orbit_transaction::cpi::accounts::ClearBuyerPhysicalTransactions{
                     transactions_log: ctx.accounts.buyer_transactions_log.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 }
             ),
-            ctx.accounts.phys_transaction.metadata.seller_tx_index
+            ctx.accounts.physical_transaction.metadata.seller_tx_index
         )?;
 
-        ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Closed;
+        ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Closed;
         Ok(())
     }
 }
@@ -840,25 +856,36 @@ impl<'a, 'b, 'c> OrbitDisputableTrait<'a, 'b, 'c, OpenPhysicalDispute<'a>, Close
 pub struct SellerConfirmationsContext<'info>{
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::BuyerFunded
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::BuyerFunded
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub physical_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.seller,
-        
+        constraint = seller_market_account.voter_id == physical_transaction.metadata.seller
+    )]
+    pub seller_market_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"seller_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &seller_market_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub seller_transactions: Box<Account<'info, SellerOpenTransactions>>,
 
     #[account(
-        address = seller_transactions.seller_wallet
+        address = seller_market_account.wallet
     )]
     pub wallet: Signer<'info>,
 }
 
 pub fn update_shipping(ctx: Context<SellerConfirmationsContext>, enc_shipping: [u8; 64]) -> Result<()>{
-    ctx.accounts.phys_transaction.shipping = enc_shipping;
-    ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::Shipped;
+    ctx.accounts.physical_transaction.shipping = enc_shipping;
+    ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::Shipped;
     Ok(())
 }
 
@@ -870,29 +897,42 @@ pub fn update_shipping(ctx: Context<SellerConfirmationsContext>, enc_shipping: [
 pub struct BuyerConfirm<'info>{
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::Shipped
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::Shipped
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub physical_transaction: Account<'info, PhysicalTransaction>,
 
     #[account(
-        address = phys_transaction.metadata.buyer,
-        has_one = buyer_wallet
+        mut
+    )]
+    pub buyer_account: Account<'info, OrbitMarketAccount>,
+
+    #[account(
+        seeds = [
+            b"buyer_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &buyer_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub buyer_transactions: Box<Account<'info, BuyerOpenTransactions>>,
 
+    #[account(
+        address = buyer_account.wallet
+    )]
     pub buyer_wallet: Signer<'info>,
 }
 
 pub fn confirm_delivery(ctx: Context<BuyerConfirm>) -> Result<()>{
-    ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerConfirmedDelivery;
+    ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::BuyerConfirmedDelivery;
     Ok(())
 }
 
 pub fn confirm_product(ctx: Context<BuyerConfirm>) -> Result<()>{
-    if ctx.accounts.phys_transaction.metadata.transaction_state != TransactionState::BuyerConfirmedDelivery{
+    if ctx.accounts.physical_transaction.metadata.transaction_state != TransactionState::BuyerConfirmedDelivery{
         return err!(PhysicalMarketErrors::DidNotConfirmDelivery);
     }
-    ctx.accounts.phys_transaction.metadata.transaction_state = TransactionState::BuyerConfirmedProduct;
+    ctx.accounts.physical_transaction.metadata.transaction_state = TransactionState::BuyerConfirmedProduct;
     Ok(())
 }
 
@@ -905,24 +945,24 @@ pub struct LeaveReview<'info>{
     /// TX
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::Closed
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::Closed
     )]
-    pub phys_transaction: Account<'info, PhysicalTransaction>,
+    pub physical_transaction: Account<'info, PhysicalTransaction>,
 
     /////////////////////////////////////////////////
     /// REVIEW RELATED
     #[account(
         mut,
         constraint = 
-        (reviewer.seller_physical_transactions == phys_transaction.metadata.seller) ||
-        (reviewer.buyer_physical_transactions == phys_transaction.metadata.buyer)
+        (reviewer.voter_id == physical_transaction.metadata.seller) ||
+        (reviewer.voter_id == physical_transaction.metadata.buyer)
     )]
     pub reviewed_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         constraint = 
-        (reviewer.seller_physical_transactions == phys_transaction.metadata.seller) ||
-        (reviewer.buyer_physical_transactions == phys_transaction.metadata.buyer),
+        (reviewer.voter_id == physical_transaction.metadata.seller) ||
+        (reviewer.voter_id == physical_transaction.metadata.buyer),
         seeds = [
             b"orbit_account",
             wallet.key().as_ref()
@@ -960,7 +1000,7 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
             return err!(ReviewErrors::InvalidReviewAuthority)
         };
 
-        if ctx.accounts.phys_transaction.metadata.seller == ctx.accounts.reviewer.key() && !ctx.accounts.phys_transaction.metadata.reviews.seller{
+        if ctx.accounts.physical_transaction.metadata.seller == ctx.accounts.reviewer.voter_id && !ctx.accounts.physical_transaction.metadata.reviews.seller{
             if let Some(auth_bump) = ctx.bumps.get("phys_auth"){
                 orbit_transaction::submit_rating_with_signer!(
                     ctx.accounts.accounts_program.to_account_info(),
@@ -970,13 +1010,13 @@ impl <'a> OrbitMarketAccountTrait<'a, LeaveReview<'a>> for PhysicalTransaction{
                     &[&[b"market_authority", &[*auth_bump]]],
                     rating
                 )?;
-                ctx.accounts.phys_transaction.metadata.reviews.seller = true;
+                ctx.accounts.physical_transaction.metadata.reviews.seller = true;
                  
             }else{
                 return err!(MarketAccountErrors::CannotCallOrbitAccountsProgram)
             };
         }else
-        if ctx.accounts.phys_transaction.metadata.buyer == ctx.accounts.reviewer.key()  && !ctx.accounts.phys_transaction.metadata.reviews.buyer{
+        if ctx.accounts.physical_transaction.metadata.buyer == ctx.accounts.reviewer.voter_id  && !ctx.accounts.physical_transaction.metadata.reviews.buyer{
             if let Some(auth_bump) = ctx.bumps.get("phys_auth"){
                 orbit_transaction::submit_rating_with_signer!(
                     ctx.accounts.accounts_program.to_account_info(),

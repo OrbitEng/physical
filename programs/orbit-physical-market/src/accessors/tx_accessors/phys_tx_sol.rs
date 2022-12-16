@@ -3,7 +3,7 @@ use market_accounts::{
     OrbitMarketAccount,
     program::OrbitMarketAccounts
 };
-use orbit_product::{ListingsStruct, program::OrbitProduct};
+use orbit_product::{program::OrbitProduct, ListingsStruct};
 use orbit_dispute::{
     program::Dispute,
     DisputeState,
@@ -33,12 +33,12 @@ pub struct OpenPhysicalTransactionSol<'info>{
         ],
         bump
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
     
     #[account(
         seeds = [
             b"orbit_escrow_account",
-            phys_transaction.key().as_ref(),
+            physical_transaction.key().as_ref(),
             buyer_transactions_log.key().as_ref()
         ],
         bump
@@ -47,35 +47,58 @@ pub struct OpenPhysicalTransactionSol<'info>{
 
     #[account(
         mut,
-        constraint = phys_product.quantity > 0
+        constraint = phys_product.quantity > 0,
+        constraint = phys_product.metadata.owner_catalog == seller_market_account.voter_id
     )] 
     pub phys_product: Box<Account<'info, PhysicalProduct>>,
     
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [
+            b"buyer_transactions",
+            (&(orbit_transaction::TransactionType::Digital).try_to_vec()?).as_slice(),
+            &buyer_market_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
+    )]
     pub buyer_transactions_log: Box<Account<'info, BuyerOpenTransactions>>,
 
     #[account(
-        mut,
-        constraint = buyer_market_account.wallet == buyer_wallet.key(),
-        constraint = buyer_market_account.buyer_physical_transactions == buyer_transactions_log.key()
+        mut
     )]
     pub buyer_market_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
-        address = buyer_transactions_log.buyer_wallet
+        address = buyer_market_account.wallet
     )]
     pub buyer_wallet: Signer<'info>,
-    
-    #[account(
-        mut,
-        address = phys_product.metadata.owner_catalog
-    )]
-    pub seller_listings: Box<Account<'info, ListingsStruct>>,
+
+    #[account(    )]
+    pub seller_market_account: Account<'info, OrbitMarketAccount>,
 
     #[account(
         mut,
-        constraint = seller_transactions_log.seller_wallet == seller_listings.listings_owner
+        seeds = [
+            b"vendor_listings",
+            (&(orbit_product::ListingsType::Commissions).try_to_vec()?).as_slice(),
+            &seller_market_account.voter_id.to_le_bytes()
+        ],
+        bump,
+        seeds::program = &orbit_product::id()
+    )]
+    pub seller_listings: Account<'info, ListingsStruct>,
+
+    #[account(
+        mut,
+        seeds = [
+            b"seller_transactions",
+            (&(orbit_transaction::TransactionType::Commissions).try_to_vec()?).as_slice(),
+            &seller_market_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub seller_transactions_log: Box<Account<'info, SellerOpenTransactions>>,
 
@@ -103,18 +126,18 @@ pub struct ClosePhysicalTransactionSol<'info>{
     /// TX
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         mut,
         seeds = [
             b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
+            physical_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
-        bump,
-        address = phys_transaction.metadata.escrow_account
+        bump
     )]
     pub escrow_account: SystemAccount<'info>,
 
@@ -124,14 +147,19 @@ pub struct ClosePhysicalTransactionSol<'info>{
     /// BUYER
     #[account(
         mut,
-        constraint = buyer_account.buyer_physical_transactions == buyer_transactions_log.key()
+        constraint = buyer_account.voter_id == physical_transaction.metadata.buyer
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
     
     #[account(
         mut,
-        address = phys_transaction.metadata.buyer,
-        has_one = buyer_wallet
+        seeds = [
+            b"buyer_transactions",
+            (&(orbit_transaction::TransactionType::Commissions).try_to_vec()?).as_slice(),
+            &buyer_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub buyer_transactions_log: Box<Account<'info, BuyerOpenTransactions>>,
 
@@ -144,14 +172,19 @@ pub struct ClosePhysicalTransactionSol<'info>{
     /// SELLER
     #[account(
         mut,
-        constraint = seller_account.seller_physical_transactions == seller_transactions_log.key()
+        constraint = seller_account.voter_id == physical_transaction.metadata.seller
     )]
     pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,
-        address = phys_transaction.metadata.seller,
-        has_one = seller_wallet
+        seeds = [
+            b"seller_transactions",
+            (&(orbit_transaction::TransactionType::Commissions).try_to_vec()?).as_slice(),
+            &seller_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub seller_transactions_log: Box<Account<'info, SellerOpenTransactions>>,
 
@@ -189,16 +222,16 @@ pub struct FundEscrowSol<'info>{
     /// TX
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::SellerConfirmed,
-        constraint = phys_transaction.metadata.escrow_account == escrow_account.key()
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::SellerConfirmed
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
     
     #[account(
         mut,
         seeds = [
             b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
+            physical_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
         bump
     )]
@@ -210,12 +243,27 @@ pub struct FundEscrowSol<'info>{
     /// BUYER
     #[account(
         mut,
-        address = phys_transaction.metadata.buyer,
-        has_one = buyer_wallet
+        seeds = [
+            b"buyer_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &buyer_market_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub buyer_transactions_log: Box<Account<'info, BuyerOpenTransactions>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = buyer_market_account.voter_id == physical_transaction.metadata.buyer
+    )]
+    pub buyer_market_account: Box<Account<'info, OrbitMarketAccount>>,
+    
+
+    #[account(
+        mut,
+        address = buyer_market_account.wallet
+    )]
     pub buyer_wallet: Signer<'info>
 }
 
@@ -226,16 +274,16 @@ pub struct SellerEarlyDeclineSol<'info>{
     #[account(
         mut
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
 
     #[account(
         mut,
         seeds = [
             b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
+            physical_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
-        bump,
-        address = phys_transaction.metadata.escrow_account
+        bump
     )]
     pub escrow_account: SystemAccount<'info>,
 
@@ -245,16 +293,23 @@ pub struct SellerEarlyDeclineSol<'info>{
     /// BUYER
     #[account(
         mut,
-        constraint = buyer_account.buyer_physical_transactions == buyer_transactions_log.key()
+        constraint = buyer_account.voter_id == physical_transaction.metadata.buyer
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
     
+    /// BUYER
     #[account(
         mut,
-        address = phys_transaction.metadata.buyer,
-        has_one = buyer_wallet
+        seeds = [
+            b"buyer_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &buyer_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub buyer_transactions_log: Box<Account<'info, BuyerOpenTransactions>>,
+    
 
     #[account(
         mut,
@@ -266,12 +321,26 @@ pub struct SellerEarlyDeclineSol<'info>{
 
     #[account(
         mut,
-        address = phys_transaction.metadata.seller,
-        has_one = seller_wallet
+        constraint = seller_account.voter_id == physical_transaction.metadata.seller
+    )]
+    pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
+    
+    #[account(
+        mut,
+        seeds = [
+            b"seller_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &seller_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub seller_transactions_log: Box<Account<'info, SellerOpenTransactions>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        address = seller_account.wallet
+    )]
     pub seller_wallet: Signer<'info>,
 
     //////////////////////////////////
@@ -299,19 +368,18 @@ pub struct ClosePhysicalDisputeSol<'info>{
     /// TX
     #[account(
         mut,
-        constraint = phys_transaction.metadata.transaction_state == TransactionState::Frozen
+        constraint = physical_transaction.metadata.transaction_state == TransactionState::Frozen
     )]
-    pub phys_transaction: Box<Account<'info, PhysicalTransaction>>,
+    pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
     
     #[account(
         mut,
         seeds = [
             b"orbit_escrow_account",
-            phys_transaction.key().as_ref()
+            physical_transaction.key().as_ref(),
+            buyer_transactions_log.key().as_ref()
         ],
-        bump,
-
-        address = phys_transaction.metadata.escrow_account
+        bump
     )]
     pub escrow_account: SystemAccount<'info>,
     
@@ -319,7 +387,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     /// DISPUTE
     #[account(
         mut,
-        constraint = phys_dispute.dispute_transaction == phys_transaction.key(),
+        constraint = phys_dispute.dispute_transaction == physical_transaction.key(),
         constraint = phys_dispute.dispute_state == DisputeState::Resolved,
         has_one = funder
     )]
@@ -353,20 +421,19 @@ pub struct ClosePhysicalDisputeSol<'info>{
     /// BUYER
     #[account(
         mut,
-        seeds = [
-            b"orbit_account",
-            buyer_wallet.key().as_ref()
-        ],
-        bump,
-        seeds::program = market_accounts::ID,
-        constraint = buyer_account.buyer_physical_transactions == buyer_transactions_log.key()
+        constraint = buyer_account.voter_id == physical_transaction.metadata.buyer
     )]
     pub buyer_account: Box<Account<'info, OrbitMarketAccount>>,
     
     #[account(
         mut,
-        address = phys_transaction.metadata.buyer,
-        has_one = buyer_wallet
+        seeds = [
+            b"buyer_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &buyer_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub buyer_transactions_log: Box<Account<'info, BuyerOpenTransactions>>,
     
@@ -379,14 +446,19 @@ pub struct ClosePhysicalDisputeSol<'info>{
     /// SELLER
     #[account(
         mut,
-        constraint = seller_account.seller_physical_transactions == seller_transactions_log.key()
+        constraint = seller_account.voter_id == physical_transaction.metadata.seller
     )]
     pub seller_account: Box<Account<'info, OrbitMarketAccount>>,
-
+    
     #[account(
         mut,
-        address = phys_transaction.metadata.seller,
-        constraint = seller_transactions_log.seller_wallet == seller_account.wallet
+        seeds = [
+            b"seller_transactions",
+            (&(orbit_transaction::TransactionType::Physical).try_to_vec()?).as_slice(),
+            &seller_account.voter_id.to_le_bytes()
+        ], 
+        bump,
+        seeds::program = &orbit_transaction::id()
     )]
     pub seller_transactions_log: Box<Account<'info, SellerOpenTransactions>>,
 
