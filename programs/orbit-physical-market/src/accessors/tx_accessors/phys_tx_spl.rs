@@ -453,7 +453,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
     #[account(
         constraint = buyer_market_account.voter_id == physical_transaction.metadata.buyer
     )]
-    pub buyer_market_account: Account<'info, OrbitMarketAccount>,
+    pub buyer_market_account: Box<Account<'info, OrbitMarketAccount>>,
 
     #[account(
         mut,

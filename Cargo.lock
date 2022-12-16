@@ -1102,7 +1102,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#f287113e434b1fa881af7fa22fe60fdd0ed0be0c"
+source = "git+https://github.com/OrbitEng/dispute#3aba252ff332adb725bda68f294e9fd414a5f107"
 dependencies = [
  "anchor-lang",
  "market-accounts",
