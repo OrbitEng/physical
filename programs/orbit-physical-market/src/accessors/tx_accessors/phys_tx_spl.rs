@@ -152,6 +152,13 @@ pub struct ClosePhysicalTransactionSpl<'info>{
         constraint = physical_transaction.metadata.transaction_state == TransactionState::BuyerConfirmedProduct,
     )]
     pub physical_transaction: Box<Account<'info, PhysicalTransaction>>,
+
+    #[account(
+        mut,
+        constraint = phys_product.metadata.index == physical_transaction.metadata.product,
+        constraint = phys_product.metadata.owner_catalog == seller_account.voter_id
+    )] 
+    pub phys_product: Box<Account<'info, PhysicalProduct>>,
     
     #[account(
         mut,
@@ -235,6 +242,8 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub market_account_program: Program<'info, OrbitMarketAccounts>,
     
     pub physical_program: Program<'info, OrbitPhysicalMarket>,
+    
+    pub product_program: Program<'info, OrbitProduct>,
 
     pub transaction_program: Program<'info, OrbitTransaction>,
 

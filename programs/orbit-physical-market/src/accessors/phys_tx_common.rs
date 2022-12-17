@@ -130,8 +130,9 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         orbit_product::cpi::update_product_quantity_internal(
             CpiContext::new_with_signer(
                 ctx.accounts.product_program.to_account_info(),
-                orbit_product::cpi::accounts::UpdateProductFieldInternal{
+                orbit_product::cpi::accounts::UpdatePhysicalQuantityInternal{
                     product: ctx.accounts.phys_product.to_account_info(),
+                    vendor_account: ctx.accounts.seller_market_account.to_account_info(),
                     vendor_listings: ctx.accounts.seller_listings.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
@@ -211,13 +212,14 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         orbit_product::cpi::update_product_quantity_internal(
             CpiContext::new_with_signer(
                 ctx.accounts.product_program.to_account_info(),
-                orbit_product::cpi::accounts::UpdateProductFieldInternal{
+                orbit_product::cpi::accounts::UpdatePhysicalQuantityInternal{
                     product: ctx.accounts.phys_product.to_account_info(),
+                    vendor_account: ctx.accounts.seller_market_account.to_account_info(),
                     vendor_listings: ctx.accounts.seller_listings.to_account_info(),
                     caller_auth: ctx.accounts.physical_auth.to_account_info(),
                     caller: ctx.accounts.physical_program.to_account_info()
                 },
-                    &[&[b"market_authority", &[*auth_bump]]]
+                &[&[b"market_authority", &[*auth_bump]]]
             ),
             ctx.accounts.phys_product.quantity-1
         )?;
@@ -311,6 +313,18 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                 ctx.accounts.physical_program.to_account_info(),
                 &[&[b"market_authority", &[*auth_bump]]]
             )?;
+
+            orbit_product::cpi::physical_increment_times_sold(
+                CpiContext::new_with_signer(
+                    ctx.accounts.product_program.to_account_info(),
+                    orbit_product::cpi::accounts::IncrementPhysicalSoldInternal{
+                        product: ctx.accounts.phys_product.to_account_info(),
+                        caller_auth: ctx.accounts.physical_auth.to_account_info(),
+                        caller: ctx.accounts.physical_program.to_account_info()
+                    },
+                    &[&[b"market_authority", &[*auth_bump]]]
+                )
+            )?;
         }else{
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         };
@@ -388,6 +402,26 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
                 ).expect("couldnt close escrow");
             }
             
+            orbit_transaction::post_tx_incrementing!(
+                ctx.accounts.market_account_program.to_account_info(),
+                ctx.accounts.buyer_account.to_account_info(),
+                ctx.accounts.seller_account.to_account_info(),
+                ctx.accounts.physical_auth.to_account_info(),
+                ctx.accounts.physical_program.to_account_info(),
+                &[&[b"market_authority", &[*auth_bump]]]
+            )?;
+            orbit_product::cpi::physical_increment_times_sold(
+                CpiContext::new_with_signer(
+                    ctx.accounts.product_program.to_account_info(),
+                    orbit_product::cpi::accounts::IncrementPhysicalSoldInternal{
+                        product: ctx.accounts.phys_product.to_account_info(),
+                        caller_auth: ctx.accounts.physical_auth.to_account_info(),
+                        caller: ctx.accounts.physical_program.to_account_info()
+                    },
+                    &[&[b"market_authority", &[*auth_bump]]]
+                )
+            )?;
+            
             orbit_transaction::close_escrow_spl_rate!(
                 ctx.accounts.token_program.to_account_info(),
                 ctx.accounts.escrow_account.to_account_info(),
@@ -400,19 +434,6 @@ impl<'a, 'b, 'c, 'd, 'e, 'f, 'g, 'h, 'i> OrbitTransactionTrait<'a, 'b, 'c, 'd, '
         }else{
             return err!(PhysicalMarketErrors::InvalidAuthBump)
         }?;
-
-        if let Some(auth_bump) = ctx.bumps.get("phys_auth"){
-            orbit_transaction::post_tx_incrementing!(
-                ctx.accounts.market_account_program.to_account_info(),
-                ctx.accounts.buyer_account.to_account_info(),
-                ctx.accounts.seller_account.to_account_info(),
-                ctx.accounts.physical_auth.to_account_info(),
-                ctx.accounts.physical_program.to_account_info(),
-                &[&[b"market_authority", &[*auth_bump]]]
-            )?;
-        }else{
-            return err!(PhysicalMarketErrors::InvalidAuthBump)
-        };
 
         orbit_transaction::cpi::clear_seller_physical_transaction(
             CpiContext::new(
