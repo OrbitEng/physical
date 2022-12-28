@@ -7,7 +7,7 @@ pub mod errors;
 pub use structs::*;
 pub use accessors::*;
 
-declare_id!("HgZsfGTHEygTLSRDoKZkQMkJPm8jesNtUgjSQgFwVh7S");
+declare_id!("GHp8TAgzQg7PryGhvB1zVeQsNpD4Ezus1TqNZHRAQ6r1");
 
 #[program]
 pub mod orbit_physical_market {

@@ -976,7 +976,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#88344feb204741f7a013daaba90c38c7ae13f963"
+source = "git+https://github.com/OrbitEng/accounts#798c9bc1750df8d70d0e2d67f0fff3818f068182"
 dependencies = [
  "anchor-lang",
  "orbit-addresses",
@@ -1103,7 +1103,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#e63259b6b634fd6bf756f8eb79e1b9e99eb979e4"
+source = "git+https://github.com/OrbitEng/addresses#e3011624c8fa60e21c23bff8d2b297893278a3e5"
 dependencies = [
  "anchor-lang",
 ]
@@ -1111,7 +1111,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#3aba252ff332adb725bda68f294e9fd414a5f107"
+source = "git+https://github.com/OrbitEng/dispute#2e50be46ad4c9411f0483d50fba6848eb35253c5"
 dependencies = [
  "anchor-lang",
  "market-accounts",
@@ -1144,7 +1144,7 @@ dependencies = [
 [[package]]
 name = "orbit-product"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/product#9f4675e56fb84773149b200dabf8a78606411c9f"
+source = "git+https://github.com/OrbitEng/product#3beb21cf523806d345e8f3e0da2e49848b26099e"
 dependencies = [
  "anchor-lang",
  "market-accounts",
@@ -1154,7 +1154,7 @@ dependencies = [
 [[package]]
 name = "orbit-transaction"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/transaction#8d0ac3bdb03dd3818a17cb76d172da127bb67674"
+source = "git+https://github.com/OrbitEng/transaction#e93ebc13b00b7c18787afb20cd4fb898c91828b8"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
