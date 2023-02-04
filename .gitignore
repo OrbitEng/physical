@@ -1,6 +1,8 @@
 
 .anchor
 .DS_Store
-target
+/target/debug
+/target/bpfel-unknown-unknown
+/target/release
 **/*.rs.bk
 node_modules
