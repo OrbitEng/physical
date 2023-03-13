@@ -206,7 +206,7 @@ pub struct ClosePhysicalTransactionSol<'info>{
     
     #[account(
         mut,
-        address = Pubkey::new(orbit_addresses::MULTISIG_SIGNER)
+        address = Pubkey::from(orbit_addresses::MULTISIG_SIGNER)
     )]
     pub multisig_wallet: SystemAccount<'info>,
 
@@ -476,7 +476,7 @@ pub struct ClosePhysicalDisputeSol<'info>{
     
     #[account(
         mut,
-        address = Pubkey::new(orbit_addresses::MULTISIG_SIGNER)
+        address = Pubkey::from(orbit_addresses::MULTISIG_SIGNER)
     )]
     pub multisig_wallet: SystemAccount<'info>,
     

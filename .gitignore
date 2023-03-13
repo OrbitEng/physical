@@ -2,6 +2,7 @@
 .DS_Store
 /target/debug
 /target/bpfel-unknown-unknown
+/target/sbf-solana-solana
 /target/release
 **/*.rs.bk
 /node_modules

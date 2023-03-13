@@ -235,7 +235,7 @@ pub struct ClosePhysicalTransactionSpl<'info>{
     pub physical_auth: SystemAccount<'info>,
     
     #[account(
-        token::authority = Pubkey::new(orbit_addresses::MULTISIG_SIGNER)
+        token::authority = Pubkey::from(orbit_addresses::MULTISIG_SIGNER)
     )]
     pub multisig_ata: Account<'info, TokenAccount>,
 
@@ -511,7 +511,7 @@ pub struct ClosePhysicalDisputeSpl<'info>{
     pub physical_auth: SystemAccount<'info>,
 
     #[account(
-        token::authority = Pubkey::new(orbit_addresses::MULTISIG_SIGNER)
+        token::authority = Pubkey::from(orbit_addresses::MULTISIG_SIGNER)
     )]
     pub multisig_ata: Account<'info, TokenAccount>,
 
