@@ -64,16 +64,17 @@ pub struct CloseTransactionAccount<'info>{
 
     #[account(
         has_one = wallet,
-        constraint = 
-        (proposer_account.voter_id == physical_transaction.metadata.seller) ||
-        (proposer_account.voter_id == physical_transaction.metadata.buyer)
+        constraint = {
+            (proposer_account.voter_id == physical_transaction.metadata.seller) ||
+            (proposer_account.voter_id == physical_transaction.metadata.buyer)
+        }
     )]
     pub proposer_account: Account<'info, OrbitMarketAccount>,
 
     pub wallet: Signer<'info>,
     
     #[account(
-        constraint = buyer_account.voter_id == physical_transaction.metadata.buyer
+        constraint = {buyer_account.voter_id == physical_transaction.metadata.buyer}
     )]
     pub buyer_account: Account<'info, OrbitMarketAccount>,
 
