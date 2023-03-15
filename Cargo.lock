@@ -1285,7 +1285,7 @@ dependencies = [
 [[package]]
 name = "market-accounts"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/accounts#3e16ca2757ddd20584aedb4880e82f0959764a80"
+source = "git+https://github.com/OrbitEng/accounts#8e757d575503b06bcfa5b4f052b4732cdf4a9ba4"
 dependencies = [
  "anchor-lang 0.27.0",
  "orbit-addresses",
@@ -1414,7 +1414,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "orbit-addresses"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/addresses#3eb40ac35f894b38d5b5c7f93f6ef026ebdafd0e"
+source = "git+https://github.com/OrbitEng/addresses#40a38df557e0f8849a707ab6db14335af0407763"
 dependencies = [
  "anchor-lang 0.27.0",
 ]
@@ -1422,7 +1422,7 @@ dependencies = [
 [[package]]
 name = "orbit-dispute"
 version = "0.1.0"
-source = "git+https://github.com/OrbitEng/dispute#95562763f34b5a65ab53d5e90122ac17b3981723"
+source = "git+https://github.com/OrbitEng/dispute#5545c303594ace5e641f87d690ce350e14c62ff6"
 dependencies = [
  "anchor-lang 0.27.0",
  "market-accounts",
@@ -1433,7 +1433,7 @@ dependencies = [
 [[package]]
 name = "orbit-multisig"
 version = "0.9.0"
-source = "git+https://github.com/OrbitEng/multisig#6228000f9350d6158298dc63fa0ecace308b2cb5"
+source = "git+https://github.com/OrbitEng/multisig#4ef805bc4df55acaf3a702c288b57f586276c712"
 dependencies = [
  "anchor-lang 0.27.0",
 ]
@@ -2335,9 +2335,9 @@ checksum = "3ab8ed2edee10b50132aed5f331333428b011c99402b5a534154ed15746f9622"
 
 [[package]]
 name = "toml_edit"
-version = "0.19.6"
+version = "0.19.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08de71aa0d6e348f070457f85af8bd566e2bc452156a423ddf22861b3a953fae"
+checksum = "dc18466501acd8ac6a3f615dd29a3438f8ca6bb3b19537138b3106e575621274"
 dependencies = [
  "indexmap",
  "toml_datetime",
@@ -2584,9 +2584,9 @@ checksum = "9aec5da331524158c6d1a4ac0ab1541149c0b9505fde06423b02f5ef0106b9f0"
 
 [[package]]
 name = "winnow"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee7b2c67f962bf5042bfd8b6a916178df33a26eec343ae064cb8e069f638fa6f"
+checksum = "23d020b441f92996c80d94ae9166e8501e59c7bb56121189dc9eab3bd8216966"
 dependencies = [
  "memchr",
 ]
