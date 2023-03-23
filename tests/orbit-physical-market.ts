@@ -1,5 +1,5 @@
-import * as anchor from "@project-serum/anchor";
-import { Program } from "@project-serum/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import { Program } from "@coral-xyz/anchor";
 import { OrbitPhysicalMarket } from "../target/types/orbit_physical_market";
 
 describe("orbit-physical-market", () => {
